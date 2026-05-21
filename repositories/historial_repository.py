@@ -148,3 +148,30 @@ class historial_repository:
     """
     def borrar_todo(self):
         self.collection.delete_many({})
+
+    """
+    Metodo para convertir un documento de la base de datos a una representación limpia
+    @param documento: Documento de la base de datos
+    @return: Documento convertido
+    """
+    def convertir_documento(self, documento):
+        documento["_id"] = str(documento["_id"])
+
+        if "fecha" in documento:
+            documento["fecha"] = str(documento["fecha"])
+        if "primera_vez" in documento:
+            documento["primera_vez"] = str(documento["primera_vez"])
+        if "ultima_vez" in documento:
+            documento["ultima_vez"] = str(documento["ultima_vez"])
+        return documento
+
+    """
+    Metodo para listar todos los historiales de red en la base de datos de manera limpia
+    @return: Lista de historiales de red convertidos
+    """
+    def listar_todos_limpio(self):
+        documentos = list(
+            self.collection.find()
+        )
+
+        return [self.convertir_documento(documento) for documento in documentos]

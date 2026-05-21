@@ -4,7 +4,10 @@ import socket
 import subprocess
 from datetime import datetime
 import ipaddress
-
+import os
+"""
+Clase network_manager que controla la lectura de datos con Scapy
+"""
 class network_manager:
 
     """
@@ -12,6 +15,8 @@ class network_manager:
     """
     def __init__(self):
         print("Manager iniciado")
+
+    # ---- INFORMACION DE LAS INTERFACES DE RED ----
     """
     Metodo para obtener información de las interfaces de red actual y su dirección IP y MAC
     @return: Lista de diccionarios con información de las interfaces de red
@@ -53,6 +58,7 @@ class network_manager:
                 resultado.append(info)
         return resultado
 
+    # ---- CONEXION A LA RED ----
     """
     Metodo para hacer un ping a una dirección IP
     @param ip: Dirección IP a pingear
@@ -77,6 +83,7 @@ class network_manager:
             stderr = subprocess.DEVNULL
         )
 
+    # ---- LECTOR DE TABLA ARP ----
     """
     Metodo para leer la tabla ARP actual  
     @return: Tabla ARP como cadena de texto
@@ -96,11 +103,12 @@ class network_manager:
         )
         return resultado.stdout
 
+    # ---- INFORMACION DEL HOST ----
     """
     Metodo para obtener el nombre de host de una dirección IP
     @param ip: Dirección IP a obtener el nombre de host
     @return: Nombre de host como cadena de texto
-       """
+    """
     def obtener_hostname(self, ip):
         """
         Intentar obtener el nombre de host de la dirección IP
@@ -108,10 +116,11 @@ class network_manager:
         @return: Nombre de host como cadena de texto
         """
         try:
-            nombre = socket.gethostbyaddr(ip)[0]
-            return nombre
-        except socket.herror:
-            return None   
+            return socket.gethostbyaddr(ip)[0]
+        except:
+            return "Desconocido"
+    
+    # ---- LEER DISPOSITIVOS DESDE LA TABLA ARP ----
     """
     Metodo para obtener los dispositivos en la red ARP
     @return: Lista de diccionarios con información de los dispositivos en la red ARP
@@ -159,6 +168,7 @@ class network_manager:
                 })
         return dispositivos 
 
+    # ---- INFORMACION DEL RANGO IP ----
     """
     Metodo para obtener el rango IP de la red
     @return: Rango IP como cadena de texto
@@ -179,6 +189,7 @@ class network_manager:
                     return str(red)
         return None
 
+    # ---- INFORMACION DEL GATEWAY ----
     """
     Metodo para obtener el gateway de la red
     @return: Gateway como cadena de texto
@@ -202,3 +213,111 @@ class network_manager:
                     if gateway:
                         return gateway
         return None
+
+    # ---- INFORMACION DEL NOMBRE DE RED ----
+    
+    def obtener_nombre_red(self):
+        dominio = os.getenv(
+            "USERDOMAIN"
+        )
+        if dominio and dominio.upper() not in ["RED", "WORKGROUP"]:
+            return dominio
+        
+        fqdn = socket.getfqdn()
+
+        if fqdn and fqdn != socket.gethostname():
+            return fqdn
+        
+        gateway = (
+            self.obtener_gateway()
+        )
+        if gateway:
+            return (
+                f"RED-{gateway}"
+            )
+        rango = (
+            self.obtener_rango_ip()
+        )
+        if rango:
+            return (
+                f"RED-{rango}"
+            )
+        return (
+            "Red desconocida"
+        )
+
+    def obtener_servicio_puerto(self, puerto, protocolo="tcp"):
+        try:
+            return socket.getservbyport(puerto, protocolo)
+        except:
+            return "Desconocido"
+    
+    def obtener_puertos_en_uso(self):
+        conexiones = psutil.net_connections(kind="inet")
+        puertos = []
+
+        for conexion in conexiones:
+            if not conexion.laddr:
+                continue
+            local_ip = conexion.laddr.ip
+            local_puerto = conexion.laddr.port
+
+            remote_ip = None
+            remote_puerto = None
+
+            if conexion.raddr:
+                remote_ip = conexion.raddr.ip
+                remote_puerto = conexion.raddr.port
+
+            puertos.append({
+                "local_ip": local_ip,
+                "local_puerto": local_puerto,
+                "remote_ip": remote_ip,
+                "remote_puerto": remote_puerto,
+                "estado": conexion.status,
+                "pid": conexion.pid,
+                "servicio_local": self.obtener_servicio_puerto(local_puerto)
+            })
+        return puertos
+    
+    def obtener_puertos_por_agrupados_por_ip(self):
+        conexiones = self.obtener_puertos_en_uso()
+        agrupados = {}
+
+        for conexion in conexiones:
+            pares = [
+                {
+                    "ip": conexion.get("local_ip"),
+                    "puerto": conexion.get("local_puerto"),
+                }
+                ,
+                {
+                    "ip": conexion.get("remote_ip"),
+                    "puerto": conexion.get("remote_puerto"),
+                }
+            ]
+            for par in pares:
+                ip = par["ip"]
+                puerto = par["puerto"]
+
+                if not ip or not puerto:
+                    continue
+                if ip not in agrupados:
+                    agrupados[ip] = []
+
+                registro = {
+                    "puerto": puerto,
+                    "servicio": self.obtener_servicio_puerto(puerto),
+                    "estado": conexion.get("estado"),
+                    "pid": conexion.get("pid"),
+                }
+
+                if registro not in agrupados[ip]:
+                    agrupados[ip].append(registro)
+
+        for ip in agrupados:
+            agrupados[ip] = sorted(
+                agrupados[ip],
+                key = lambda x: x["puerto"],
+            )
+        return agrupados

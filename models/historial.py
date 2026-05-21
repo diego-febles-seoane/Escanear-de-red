@@ -40,7 +40,7 @@ class Historial:
         ):
         self.nombre_red = nombre_red
         self.gateway_ip = gateway_ip
-        self.puertos = puertos
+        self.puertos = puertos or []
         self.rangos_ip = rangos_ip
         self.ubicacion = ubicacion
         self.tipo_dispositivo = tipo_dispositivo

@@ -1,9 +1,11 @@
 from pymongo import MongoClient
 from config.settings import MONGO_URI, DATABASE_NAME
+
 """
 Clase para gestionar la conexión con la base de datos MongoDB
 """
 class mongo_manager: 
+    
     """
     Clase para gestionar la conexión con la base de datos MongoDB
     """

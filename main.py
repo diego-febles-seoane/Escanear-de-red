@@ -1,7 +1,9 @@
-from services.scanner_service import scanner_service
+import json
+from repositories.historial_repository import historial_repository
 
-scanner = scanner_service()
+repo = historial_repository()
 
-ids = scanner.escanar_y_guardar()
+datos = repo.listar_todos_limpio()
 
-print("\nIDs insertado:", ids)
+print (datos)
+

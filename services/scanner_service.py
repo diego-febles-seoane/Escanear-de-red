@@ -38,11 +38,30 @@ class scanner_service:
         Procesa cada dispositivo en la lista de dispositivos
         para obtener información de fabricante y guardarla en Historial
         """
+        puertos_por_ip = self.network.obtener_puertos_por_agrupados_por_ip()
+
         for dispositivo in dispositivos:
+
             fabricante = self.vendor.obtener_fabricante(dispositivo.get("mac"))
+
             historial = Historial (
+                nombre_red = self.network.obtener_nombre_red(),
                 gateway_ip = self.network.obtener_gateway(),
                 rangos_ip = self.network.obtener_rango_ip(),
+                puertos = (
+                    puertos_por_ip.get(
+                        dispositivo.get("ip"),
+                        []
+                    )
+                    or [
+                        {
+                            "puerto": "Puertos desconocidos o inaccesibles",
+                            "servicio": "Sin tráfico observado",
+                            "estado": "Inactivo",
+                            "pid": "Sin PID asignado"
+                        }
+                    ]
+                ),
                 host_name = dispositivo.get("host_name"),
                 ip = dispositivo.get("ip"),
                 mac = dispositivo.get("mac"),
@@ -50,7 +69,9 @@ class scanner_service:
                 estado = dispositivo.get("estado"),
                 fecha = dispositivo.get("fecha"),
             )
+
             historiales.append(historial)
+            print(historial.puertos)
 
         if historiales: 
             ids = self.repo.insertar_muchos(historiales)
