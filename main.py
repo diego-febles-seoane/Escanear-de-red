@@ -1,9 +1,37 @@
-import json
-from repositories.historial_repository import historial_repository
+from managers.network_manager import network_manager
+from services.vendor_service import vendor_service
+from services.device_classifier_service import device_classifier_service
 
-repo = historial_repository()
+network = network_manager()
+vendor = vendor_service()
+classifier = device_classifier_service()
 
-datos = repo.listar_todos_limpio()
+dispositivo = network.obtener_info_interfaces()
 
-print (datos)
+for dispositivo in dispositivo:
+    fabricante = (
+        vendor.obtener_fabricante(
+            dispositivo.get("mac")
+        )
+    )
 
+    puertos = (
+        network.obtener_puertos_por_agrupados_por_ip()
+        .get(
+            dispositivo.get("ip"),
+            []
+        )
+    )
+    tipo = (
+        classifier.clasificar(
+            fabricante=fabricante,
+            puertos=puertos,
+            host_name=dispositivo.get("host_name")
+        )
+    )
+
+    print("\n==============")
+    print("IP:", dispositivo.get("ip"))
+    print("HOST:", dispositivo.get("host_name"))
+    print("FABRICANTE:", fabricante)
+    print("TIPO:", tipo)
