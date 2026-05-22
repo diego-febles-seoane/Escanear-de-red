@@ -1,14 +1,14 @@
-from services.scanner_service import scanner_service
 from repositories.activos_repository import activos_repository
 
-scanner = scanner_service()
-scanner.escanar_y_guardar()
 repo = activos_repository()
 
-print("ACTIVOS: ")
-for dispositivo in repo.listar_todos():
-    print(
-        dispositivo.get("ip"),
-        dispositivo.get("nombre_dispositivo"),
-        dispositivo.get("tipo_dispositivo")
-    )
+dashboard = repo.obtener_dashboard()
+print("\nTOTAL ACTIVOS: ")
+print(dashboard["total_activos"])
+print("\nPOR TIPO: ")
+print(dashboard["por_tipo"])
+print("\nPOR FABRICANTE: ")
+print(dashboard["por_fabricante"])
+print("\nRECENTES: ")
+for reciente in dashboard["recientes"]:
+    print(reciente)
