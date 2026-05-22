@@ -59,7 +59,7 @@ class historial_repository:
     def buscar_por_ip(self, ip):
         return self.collection.find_one({"ip": ip})
     
-    # ---- BUSCAR POR MAC, PRIMERA Y ULTIMA VEZ POR MAC ----
+    # ---- BUSCAR Y CONTAR POR MAC, PRIMERA Y ULTIMA VEZ POR MAC ----
     """
     Metodo para buscar un historial de red por su dirección MAC
     @param mac: Dirección MAC a buscar
@@ -77,11 +77,23 @@ class historial_repository:
             {"mac": mac},
             sort=[("fecha", 1)]
         )
+    """
+    Metodo para buscar el último registro de un dispositivo por su dirección MAC
+    @param mac: Dirección MAC a buscar
+    @return: Objeto Historial encontrado o None si no se encuentra
+    """
     def buscar_ultimo_registro_por_mac(self, mac):
         return self.collection.find_one(
             {"mac": mac},
             sort=[("fecha", -1)]
         )
+    """
+    Metodo para contar los registros de un dispositivo por su dirección MAC
+    @param mac: Dirección MAC a buscar
+    @return: Número de registros encontrados
+    """
+    def contar_por_mac(self, mac):
+        return self.collection.count_documents({"mac": mac})
 
     # ---- BUSCAR POR HOST_NAME ----
     """

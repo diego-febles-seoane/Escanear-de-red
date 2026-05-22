@@ -70,6 +70,13 @@ class scanner_service:
                 host_name = dispositivo.get("host_name")
             )
 
+            # ---- VECES VISTO ----
+            mac = dispositivo.get("mac")
+            veces_visto = (
+                self.repo.contar_por_mac(mac)
+                +1
+            )
+
             # ---- PRIMER Y ULTIMO REGISTRO ----
             mac = dispositivo.get("mac")
             fecha_actual = dispositivo.get("fecha")
@@ -89,6 +96,7 @@ class scanner_service:
             historial = Historial (
                 ip = dispositivo.get("ip"),
                 mac = dispositivo.get("mac"),
+                veces_visto = veces_visto,
                 host_name = dispositivo.get("host_name"),
                 nombre_red = self.network.obtener_nombre_red(),
                 gateway_ip = self.network.obtener_gateway(),
