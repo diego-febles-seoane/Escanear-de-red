@@ -22,34 +22,33 @@ class Historial:
     """
     def __init__(
         self,
-        nombre_red = None,
-        gateway_ip = None,
-        puertos = None,   
-        rangos_ip = None, 
-        ubicacion = None,
-        tipo_dispositivo = None,
-        fecha = None,
-        host_name = None,
         ip = None,
         mac = None,
+        host_name = None,
+        nombre_red = None,
+        gateway_ip = None,
+        rangos_ip = None, 
+        puertos = None,   
         fabricante = None,
+        tipo_dispositivo = None,
         nombre_dispositivo = None,
         estado = None,
+        ubicacion = None,
+        fecha = None,
         primera_vez = None,
         ultima_vez = None,
         ):
+        self.ip = ip
+        self.mac = mac
+        self.host_name = host_name
         self.nombre_red = nombre_red
         self.gateway_ip = gateway_ip
-        self.puertos = puertos or []
         self.rangos_ip = rangos_ip
         self.ubicacion = ubicacion
         self.tipo_dispositivo = tipo_dispositivo
-        self.fecha = fecha
-        self.host_name = host_name
-        self.ip = ip
-        self.mac = mac
-        self.fabricante = fabricante
         self.nombre_dispositivo = nombre_dispositivo
+        self.fecha = fecha
+        self.fabricante = fabricante
         self.estado = estado
         self.primera_vez = primera_vez
         self.ultima_vez = ultima_vez
@@ -60,19 +59,19 @@ class Historial:
     """
     def to_dict(self):
         return {
-            "nombre_red": self.nombre_red,
-            "gateway_ip": self.gateway_ip,
-            "puertos": self.puertos,
-            "rangos_ip": self.rangos_ip,
-            "ubicacion": self.ubicacion,
-            "tipo_dispositivo": self.tipo_dispositivo,
-            "fecha": self.fecha,
-            "host_name": self.host_name,
             "ip": self.ip,
             "mac": self.mac,
+            "host_name": self.host_name,
+            "nombre_red": self.nombre_red,
+            "gateway_ip": self.gateway_ip,
+            "rangos_ip": self.rangos_ip,
+            "puertos": self.puertos,
             "fabricante": self.fabricante,
+            "tipo_dispositivo": self.tipo_dispositivo,
             "nombre_dispositivo": self.nombre_dispositivo,
             "estado": self.estado,
+            "ubicacion": self.ubicacion,
+            "fecha": self.fecha,
             "primera_vez": self.primera_vez,
             "ultima_vez": self.ultima_vez,
         }

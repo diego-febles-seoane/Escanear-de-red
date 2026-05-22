@@ -2,6 +2,8 @@ from managers.network_manager import network_manager
 from models.historial import Historial
 from repositories.historial_repository import historial_repository
 from services.vendor_service import vendor_service
+from services.device_classifier_service import device_classifier_service
+
 """
 Servicio de escaneo de red para obtener información de los dispositivos
 """
@@ -14,10 +16,6 @@ class scanner_service:
         self.network = network_manager()
         self.repo = historial_repository()
         self.vendor = vendor_service()
-        self.repository= historial_repository
-
-        def get_devices(self):
-            return self.repository.get_all()
     
     """
     Escanea la red para obtener información de los dispositivos
@@ -46,9 +44,18 @@ class scanner_service:
 
         for dispositivo in dispositivos:
 
+            tipo = self.classifier.clasificar(
+                fabricante = fabricante,
+                puertos = puertos,
+                host_name = dispositivo.get("host_name")
+            )
+            
             fabricante = self.vendor.obtener_fabricante(dispositivo.get("mac"))
 
             historial = Historial (
+                ip = dispositivo.get("ip"),
+                mac = dispositivo.get("mac"),
+                host_name = dispositivo.get("host_name"),
                 nombre_red = self.network.obtener_nombre_red(),
                 gateway_ip = self.network.obtener_gateway(),
                 rangos_ip = self.network.obtener_rango_ip(),
@@ -66,12 +73,10 @@ class scanner_service:
                         }
                     ]
                 ),
-                host_name = dispositivo.get("host_name"),
-                ip = dispositivo.get("ip"),
-                mac = dispositivo.get("mac"),
                 fabricante = fabricante,
-                estado = dispositivo.get("estado"),
+                tipo_dispositivo = tipo,
                 fecha = dispositivo.get("fecha"),
+                estado = dispositivo.get("estado"),
             )
 
             historiales.append(historial)

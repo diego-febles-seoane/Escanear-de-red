@@ -110,17 +110,44 @@ class network_manager:
     @return: Nombre de host como cadena de texto
     """
     def obtener_hostname(self, ip):
+        try:
+            nombre = socket.gethostbyaddr(ip)[0]
+
+            if nombre:
+                return nombre
+        except:
+            pass
+
         """
-        Intentar obtener el nombre de host de la dirección IP
+        Intentar obtener el nombre de host utilizando el comando nbtstat -A
         @param ip: Dirección IP a obtener el nombre de host
         @return: Nombre de host como cadena de texto
         """
         try:
-            return socket.gethostbyaddr(ip)[0]
+            resultado = subprocess.run(
+                ["nbtstat," "-A", ip],
+                capture_output=True,
+                text=True,
+                timeout=3
+            )
+            
+            """
+            Recorrer las líneas de la salida del comando nbtstat -A y obtener el nombre de host
+            @param linea: Línea de la salida del comando nbtstat -A
+            @return: Nombre de host como cadena de texto
+            """
+            for linea in resultado.stdout.splitlines():
+                if "<00>" in linea and "UNIQUE" in linea:
+                    partes = linea.split()
+
+                    if len(partes) > 0:
+                        return partes[0]
         except:
-            return "Desconocido"
+            pass
+
+        return "Desconocido"
     
-    # ---- LEER DISPOSITIVOS DESDE LA TABLA ARP ----
+       # ---- LEER DISPOSITIVOS DESDE LA TABLA ARP ----
     """
     Metodo para obtener los dispositivos en la red ARP
     @return: Lista de diccionarios con información de los dispositivos en la red ARP
