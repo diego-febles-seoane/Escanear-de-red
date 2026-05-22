@@ -70,15 +70,12 @@ class network_manager:
         ).decode(
             errors="ignore"
         )
-
         mac = re.search(
             r"([0-9A-F]{2}"
             r"[-:]"
             r"){5}"
             r"([0-9A-F]{2})",
-
             salida,
-
             re.I
         )
         if mac:
