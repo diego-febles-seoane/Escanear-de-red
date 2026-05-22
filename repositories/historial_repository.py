@@ -205,6 +205,6 @@ class historial_repository:
     """
     def listar_todos_limpio(self):
         documentos = list(
-            self.collection.find()
+            self.collection.find().sort("_id",-1)
         )
         return [self.convertir_documento(documento) for documento in documentos]

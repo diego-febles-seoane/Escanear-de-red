@@ -47,7 +47,7 @@
                                 <th>Estado</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="historial-tbody">
                             {% for item in historial %}
                             <tr>
                                 <td>{{ item.fecha|default:"-" }}</td>
@@ -76,7 +76,7 @@
         </div>
     </div>
 </div>
-
+<!-- 
 <script>
     const scanBtn = document.getElementById('scanBtn');
     const progressContainer = document.getElementById('progress-container');
@@ -136,4 +136,88 @@
         updateProgress();
     }
 </script>
+
+-->
+
+<script>
+    const scanBtn = document.getElementById('scanBtn');
+    const fetchBtn = document.getElementById('fetchBtn');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('main-progress-bar');
+    const progressPercent = document.getElementById('progress-percent');
+    const progressStatus = document.getElementById('progress-status');
+    const tableBody = document.getElementById('historial-tbody');
+
+    // --- LÓGICA DEL PROGRESO ---
+    function updateProgress() {
+        fetch('{% url "get_progress" %}')
+            .then(response => response.json())
+            .then(data => {
+                const percentage = data.percentage;
+                progressBar.style.width = percentage + '%';
+                progressPercent.innerText = percentage + '%';
+                progressStatus.innerText = data.message || 'Escaneando...';
+
+                if (data.status === 'running') {
+                    setTimeout(updateProgress, 1000);
+                } else if (data.status === 'finished') {
+                    progressStatus.innerText = '¡Escaneo completado!';
+                    progressBar.classList.remove('progress-bar-animated');
+                    // Opcional: recargar datos automáticamente al terminar
+                    fetchData(); 
+                    setTimeout(() => progressContainer.classList.add('d-none'), 3000);
+                    scanBtn.disabled = false;
+                    scanBtn.innerHTML = '<i class="bi bi-search"></i> Iniciar Nuevo Escaneo';
+                }
+            });
+    }
+
+    // --- BOTÓN 1: INICIAR ESCANEO ---
+    scanBtn.addEventListener('click', function() {
+        progressContainer.classList.remove('d-none');
+        scanBtn.disabled = true;
+        scanBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Escaneando...';
+
+        fetch('{% url "scan" %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            updateProgress();
+        });
+    });
+
+    // --- BOTÓN 2: FETCH (ACTUALIZAR TABLA) ---
+    function fetchData() {
+        fetch('{% url "get_devices" %}')
+            .then(response => response.json())
+            .then(data => {
+                tableBody.innerHTML = ''; // Limpiar tabla
+                
+                if (data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No hay registros.</td></tr>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const badgeClass = item.estado === 'up' ? 'bg-success' : 'bg-secondary';
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td>${item.fecha || '-'}</td>
+                            <td>${item.ip}</td>
+                            <td>${item.mac}</td>
+                            <td>${item.host_name || '-'}</td>
+                            <td>${item.fabricante || 'Desconocido'}</td>
+                            <td><span class="badge ${badgeClass}">${item.estado}</span></td>
+                        </tr>
+                    `;
+                });
+                console.log("Tabla actualizada con listar_todos_limpio");
+            });
+    }
+
+    fetchBtn.addEventListener('click', fetchData);
+</script>
+
 {% endblock %}
