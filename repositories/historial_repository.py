@@ -175,3 +175,7 @@ class historial_repository:
         )
 
         return [self.convertir_documento(documento) for documento in documentos]
+
+
+def __init__(sef):
+mongo =MongoManager ()

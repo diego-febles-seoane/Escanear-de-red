@@ -14,6 +14,10 @@ class scanner_service:
         self.network = network_manager()
         self.repo = historial_repository()
         self.vendor = vendor_service()
+        self.repository= historial_repository
+
+        def get_devices(self):
+            return self.repository.get_all()
     
     """
     Escanea la red para obtener información de los dispositivos
