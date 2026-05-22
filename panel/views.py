@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from services.scanner_service import ScannerService
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import threading
@@ -101,10 +100,21 @@ def export_data(request):
     return JsonResponse({'datos': datos, 'count': len(datos)})
 
 
-def get_devices (request):
-    service = ScannerService()
-    data = service.get_devides()
-    return JsonResponse(
-        data,
-        safe=False
-    )
+def get_devices(request):
+    
+    repo = get_historial_repo()
+    
+    if repo:
+        try:
+    
+            data = repo.listar_todos_limpio()
+            
+    
+            print(f"\n[CMD] Enviando {len(data)} dispositivos a la vista JSON\n")
+            
+            return JsonResponse(data, safe=False)
+        except Exception as e:
+            print(f"Error al obtener dispositivos: {e}")
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'No se pudo conectar al repositorio'}, status=500)

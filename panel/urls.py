@@ -6,4 +6,5 @@ urlpatterns = [
     path('scan/', views.scan, name='scan'),
     path('progress/', views.get_progress, name='get_progress'),
     path('export/', views.export_data, name='export_data'),
+    path('devices/', views.get_devices, name='get_devices'),
 ]
