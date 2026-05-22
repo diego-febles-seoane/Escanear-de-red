@@ -18,6 +18,9 @@ class device_classifier_service:
         numero_puertos = []
 
         for puerto in puertos:
+
+            if not isinstance(puerto, dict):
+                continue
             valor = puerto.get("puerto")
 
             if isinstance(valor, int):
@@ -73,7 +76,6 @@ class device_classifier_service:
             return (
                 "Dispositivo " + fabricante.title()
             )
-        
         return (
             "Dispositivo desconocido"
         )

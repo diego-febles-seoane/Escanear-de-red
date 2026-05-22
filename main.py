@@ -1,37 +1,10 @@
-from managers.network_manager import network_manager
-from services.vendor_service import vendor_service
-from services.device_classifier_service import device_classifier_service
+from repositories.historial_repository import historial_repository
 
-network = network_manager()
-vendor = vendor_service()
-classifier = device_classifier_service()
+repo = historial_repository()
 
-dispositivo = network.obtener_info_interfaces()
+mac = "ff-ff-ff-ff-ff-ff"
 
-for dispositivo in dispositivo:
-    fabricante = (
-        vendor.obtener_fabricante(
-            dispositivo.get("mac")
-        )
-    )
+ultimo = repo.buscar_ultimo_registro_por_mac(mac)
 
-    puertos = (
-        network.obtener_puertos_por_agrupados_por_ip()
-        .get(
-            dispositivo.get("ip"),
-            []
-        )
-    )
-    tipo = (
-        classifier.clasificar(
-            fabricante=fabricante,
-            puertos=puertos,
-            host_name=dispositivo.get("host_name")
-        )
-    )
-
-    print("\n==============")
-    print("IP:", dispositivo.get("ip"))
-    print("HOST:", dispositivo.get("host_name"))
-    print("FABRICANTE:", fabricante)
-    print("TIPO:", tipo)
+print(ultimo["_id"])
+print(ultimo["ultima_vez"])

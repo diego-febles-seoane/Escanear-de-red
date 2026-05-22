@@ -11,6 +11,8 @@ class historial_repository:
         mongo = mongo_manager()
         self.db = mongo.get_db()
         self.collection = self.db["historial"]
+
+    # ---- INSERTAR REGISTRO ----
     """
     Metodo para insertar un historial de red en la base de datos
     @param historial: Objeto Historial a insertar
@@ -33,12 +35,16 @@ class historial_repository:
             self.collection.insert_many(documentos)
         )
         return resultado.inserted_ids
+
+    # ---- LISTAR TODOS LOS REGISTROS ----
     """
     Metodo para listar todos los historiales de red en la base de datos
     @return: Lista de objetos Historial
     """
     def listar_todos(self):
         return list(self.collection.find())
+
+    # ---- BUSCAR REGISTRO POR ID DE MONGODB ----
     """
     Metodo para buscar un historial de red por su ID
     @param id: ID del historial a buscar
@@ -52,6 +58,8 @@ class historial_repository:
     """
     def buscar_por_ip(self, ip):
         return self.collection.find_one({"ip": ip})
+    
+    # ---- BUSCAR POR MAC, PRIMERA Y ULTIMA VEZ POR MAC ----
     """
     Metodo para buscar un historial de red por su dirección MAC
     @param mac: Dirección MAC a buscar
@@ -60,12 +68,31 @@ class historial_repository:
     def buscar_por_mac(self, mac):
         return self.collection.find_one({"mac": mac})
     """
+    Metodo para buscar el primer registro de un dispositivo por su dirección MAC
+    @param mac: Dirección MAC a buscar
+    @return: Objeto Historial encontrado o None si no se encuentra
+    """
+    def buscar_primer_registro_por_mac(self, mac):
+        return self.collection.find_one(
+            {"mac": mac},
+            sort=[("fecha", 1)]
+        )
+    def buscar_ultimo_registro_por_mac(self, mac):
+        return self.collection.find_one(
+            {"mac": mac},
+            sort=[("fecha", -1)]
+        )
+
+    # ---- BUSCAR POR HOST_NAME ----
+    """
     Metodo para buscar un historial de red por su nombre de host
     @param host_name: Nombre de host a buscar
     @return: Objeto Historial encontrado o None si no se encuentra
     """
     def buscar_por_host_name(self, host_name):
         return self.collection.find_one({"host_name": host_name})
+
+    # ---- BUSCAR POR GATEWAY_IP ----
     """
     Metodo para buscar un historial de red por su dirección IP de gateway
     @param gateway_ip: Dirección IP de gateway a buscar
@@ -73,6 +100,8 @@ class historial_repository:
     """
     def buscar_por_gateway_ip(self, gateway_ip):
         return self.collection.find_one({"gateway_ip": gateway_ip})
+
+    # ---- BUSCAR POR ESTADO ----
     """
     Metodo para buscar un historial de red por su estado
     @param estado: Estado a buscar
@@ -80,6 +109,8 @@ class historial_repository:
     """
     def buscar_por_estado(self, estado):
         return self.collection.find_one({"estado": estado})
+
+    # ---- BUSCAR POR FECHA ----
     """
     Metodo para buscar un historial de red por su fecha
     @param fecha: Fecha a buscar
@@ -87,6 +118,8 @@ class historial_repository:
     """
     def buscar_por_fecha(self, fecha):
         return self.collection.find_one({"fecha": fecha})
+
+    # ---- BUSCAR POR NOMBRE_RED ----
     """
     Metodo para buscar un historial de red por su nombre de red
     @param nombre_red: Nombre de red a buscar
@@ -94,6 +127,8 @@ class historial_repository:
     """
     def buscar_por_nombre_red(self, nombre_red):
         return self.collection.find_one({"nombre_red": nombre_red})
+
+    # ---- BUSCAR POR UBICACION ----
     """
     Metodo para buscar un historial de red por su ubicación
     @param ubicacion: Ubicación a buscar
@@ -101,6 +136,8 @@ class historial_repository:
     """
     def buscar_por_ubicacion(self, ubicacion):
         return self.collection.find_one({"ubicacion": ubicacion})
+
+    # ---- BUSCAR POR TIPO_FABRICANTE ----
     """
     Metodo para buscar un historial de red por su tipo de fabricante
     @param tipo_fabricante: Tipo de fabricante a buscar
@@ -108,6 +145,8 @@ class historial_repository:
     """
     def buscar_por_tipo_fabricante(self, tipo_fabricante):
         return self.collection.find_one({"tipo_fabricante": tipo_fabricante})
+
+    # ---- BUSCAR POR NOMBRE_DISPOSITIVO ----
     """
     Metodo para buscar un historial de red por su nombre de dispositivo
     @param nombre_dispositivo: Nombre de dispositivo a buscar
@@ -115,6 +154,8 @@ class historial_repository:
     """
     def buscar_por_nombre_dispositivo(self, nombre_dispositivo):
         return self.collection.find_one({"nombre_dispositivo": nombre_dispositivo})
+
+    # ---- BUSCAR POR PRIMERA_CONEXION ----
     """
     Metodo para buscar un historial de red por su primera conexión
     @param primera_conexion: Primera conexión a buscar
@@ -122,26 +163,16 @@ class historial_repository:
     """
     def buscar_por_primera_conexion(self, primera_conexion):
         return self.collection.find_one({"primera_conexion": primera_conexion})
-    """
-    Metodo para buscar un historial de red por su última conexión
-    @param ultima_conexion: Última conexión a buscar
-    @return: Objeto Historial encontrado o None si no se encuentra
-    """
-    def buscar_por_ultima_conexion(self, ultima_conexion):
-        return self.collection.find_one({"ultima_conexion": ultima_conexion})
+
+    # ---- CONTAR REGISTROS ----
     """
     Metodo para contar el número de historiales de red en la base de datos
     @return: Número de historiales de red
     """
     def contar(self):
         return self.collection.count_documents({})
-    """
-    Metodo para borrar un historial de red por su ID
-    @param id: ID del historial a borrar
-    @return: None
-    """
-    def borrar_por_id(self, id):
-        self.collection.delete_one({"_id": ObjectId(id)})
+
+    # ---- BORRAR TODOS LOS REGISTROS ----
     """
     Metodo para borrar todos los historiales de red en la base de datos
     @return: None
@@ -149,6 +180,7 @@ class historial_repository:
     def borrar_todo(self):
         self.collection.delete_many({})
 
+    # ---- CONVERTIR DOCUMENTO A LIMPIO ----
     """
     Metodo para convertir un documento de la base de datos a una representación limpia
     @param documento: Documento de la base de datos
@@ -164,7 +196,6 @@ class historial_repository:
         if "ultima_vez" in documento:
             documento["ultima_vez"] = str(documento["ultima_vez"])
         return documento
-
     """
     Metodo para listar todos los historiales de red en la base de datos de manera limpia
     @return: Lista de historiales de red convertidos
@@ -173,5 +204,4 @@ class historial_repository:
         documentos = list(
             self.collection.find()
         )
-
         return [self.convertir_documento(documento) for documento in documentos]
