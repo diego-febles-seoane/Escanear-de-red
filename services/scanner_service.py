@@ -3,6 +3,7 @@ from models.historial import Historial
 from repositories.historial_repository import historial_repository
 from services.vendor_service import vendor_service
 from services.device_classifier_service import device_classifier_service
+from repositories.activos_repository import activos_repository
 
 """
 Servicio de escaneo de red para obtener información de los dispositivos
