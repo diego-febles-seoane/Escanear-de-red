@@ -44,22 +44,11 @@ class scanner_service:
 
         for dispositivo in dispositivos:
 
-            tipo = self.classifier.clasificar(
-                fabricante = fabricante,
-                puertos = puertos,
-                host_name = dispositivo.get("host_name")
-            )
-            
+            # ---- FABRICANTE ----
             fabricante = self.vendor.obtener_fabricante(dispositivo.get("mac"))
 
-            historial = Historial (
-                ip = dispositivo.get("ip"),
-                mac = dispositivo.get("mac"),
-                host_name = dispositivo.get("host_name"),
-                nombre_red = self.network.obtener_nombre_red(),
-                gateway_ip = self.network.obtener_gateway(),
-                rangos_ip = self.network.obtener_rango_ip(),
-                puertos = (
+            # ---- PUERTOS ----
+            puertos = (
                     puertos_por_ip.get(
                         dispositivo.get("ip"),
                         []
@@ -73,14 +62,47 @@ class scanner_service:
                         }
                     ]
                 ),
+
+            # ---- TIPO DISPOSITIVO ----
+            tipo = self.classifier.clasificar(
+                fabricante = fabricante,
+                puertos = puertos,
+                host_name = dispositivo.get("host_name")
+            )
+
+            # ---- PRIMER Y ULTIMO REGISTRO ----
+            mac = dispositivo.get("mac")
+            fecha_actual = dispositivo.get("fecha")
+            primer_registro = (
+                self.repo.buscar_primer_registro_por_mac(mac)
+            )
+            if primer_registro:
+                primera_vez = primer_registro.get(
+                    "primera_vez_conectado"
+                ) or primer_registro.get(
+                    "fecha"
+                )
+            else:
+                primera_vez = fecha_actual
+            ultima_vez = fecha_actual
+
+            historial = Historial (
+                ip = dispositivo.get("ip"),
+                mac = dispositivo.get("mac"),
+                host_name = dispositivo.get("host_name"),
+                nombre_red = self.network.obtener_nombre_red(),
+                gateway_ip = self.network.obtener_gateway(),
+                rangos_ip = self.network.obtener_rango_ip(),
+                puertos = puertos,
                 fabricante = fabricante,
                 tipo_dispositivo = tipo,
-                fecha = dispositivo.get("fecha"),
                 estado = dispositivo.get("estado"),
+                fecha = dispositivo.get("fecha"),
+                primera_vez = primera_vez,
+                ultima_vez = ultima_vez
             )
 
             historiales.append(historial)
-            print(historial.puertos)
 
         if historiales: 
             ids = self.repo.insertar_muchos(historiales)
