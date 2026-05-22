@@ -24,6 +24,7 @@ class Historial:
         self,
         ip = None,
         mac = None,
+        veces_visto = None,
         host_name = None,
         nombre_red = None,
         gateway_ip = None,
@@ -40,6 +41,7 @@ class Historial:
         ):
         self.ip = ip
         self.mac = mac
+        self.veces_visto = veces_visto
         self.host_name = host_name
         self.nombre_red = nombre_red
         self.gateway_ip = gateway_ip
@@ -62,6 +64,7 @@ class Historial:
         return {
             "ip": self.ip,
             "mac": self.mac,
+            "veces_visto": self.veces_visto,
             "host_name": self.host_name,
             "nombre_red": self.nombre_red,
             "gateway_ip": self.gateway_ip,
