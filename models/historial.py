@@ -33,7 +33,6 @@ class Historial:
         fabricante = None,
         tipo_dispositivo = None,
         nombre_dispositivo = None,
-        estado = None,
         ubicacion = None,
         fecha = None,
         primera_vez = None,
@@ -52,7 +51,6 @@ class Historial:
         self.nombre_dispositivo = nombre_dispositivo
         self.fecha = fecha
         self.fabricante = fabricante
-        self.estado = estado
         self.primera_vez = primera_vez
         self.ultima_vez = ultima_vez
     
@@ -73,7 +71,6 @@ class Historial:
             "fabricante": self.fabricante,
             "tipo_dispositivo": self.tipo_dispositivo,
             "nombre_dispositivo": self.nombre_dispositivo,
-            "estado": self.estado,
             "ubicacion": self.ubicacion,
             "fecha": self.fecha,
             "primera_vez": self.primera_vez,
