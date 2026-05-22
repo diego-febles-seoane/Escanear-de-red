@@ -19,6 +19,7 @@ class scanner_service:
         self.repo = historial_repository()
         self.vendor = vendor_service()
         self.classifier = device_classifier_service()
+        self.activos_repo = activos_repository()
     
     """
     Escanea la red para obtener información de los dispositivos
