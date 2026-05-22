@@ -1,14 +1,7 @@
-from repositories.activos_repository import activos_repository
+from repositories.logs_repository import logs_repository
 
-repo = activos_repository()
+repo = logs_repository()
 
-dashboard = repo.obtener_dashboard()
-print("\nTOTAL ACTIVOS: ")
-print(dashboard["total_activos"])
-print("\nPOR TIPO: ")
-print(dashboard["por_tipo"])
-print("\nPOR FABRICANTE: ")
-print(dashboard["por_fabricante"])
-print("\nRECENTES: ")
-for reciente in dashboard["recientes"]:
-    print(reciente)
+print(repo.log_escaneo_parcial(5))
+print(repo.log_escaneo_completo(14))
+print(repo.log_dispositivo_nuevo("AA-BB-CC", "192.168.1.100"))
