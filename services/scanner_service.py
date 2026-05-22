@@ -19,39 +19,7 @@ class scanner_service:
         self.repo = historial_repository()
         self.vendor = vendor_service()
         self.classifier = device_classifier_service()
-        self.activos_repo = activos_repository()
-
-
-    """
-    Obtiene la ubicación de un dispositivo en base a su fabricante, tipo y IP
-    @param ip: IP del dispositivo
-    @param fabricante: Fabricante del dispositivo
-    @param tipo: Tipo del dispositivo
-    @param gateway_ip: IP del gateway
-    @return: Ubicación del dispositivo
-    """
-    def obtener_ubicacion(self, ip, fabricante, tipo, gateway_ip):
-        fabricante = (fabricante or "")
-        tipo = (tipo or "")
-        ip = (ip or "")
-        if ip == gateway_ip:
-            return "Gateway / Router principal"
-        if "fortinet" in fabricante.lower():
-            return "Firewall"
-        if "impresora" in tipo.lower():
-            return "Zona impresión"
-        if "router" in tipo.lower() or "switch" in tipo.lower():
-            return "Infraestructura de red"
-        if "servidor" in tipo.lower():
-            return "Zona servidores"
-        if "móvil" in tipo.lower() or "tablet" in tipo.lower():
-            return "Dispositivos móviles"
-        if ip.startswith("169.254"):
-            return "Sin DHCP"
-        if ip.startswith("192.168"):
-            return "Red local"
-        return "Desconocido"
-       
+    
     """
     Escanea la red para obtener información de los dispositivos
     y los guarda en la base de datos Historial
@@ -141,8 +109,6 @@ class scanner_service:
                 primera_vez = fecha_actual
             ultima_vez = fecha_actual
 
-
-           
             historial = Historial (
                 ip = dispositivo.get("ip"),
                 mac = dispositivo.get("mac"),

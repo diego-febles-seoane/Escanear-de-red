@@ -113,15 +113,6 @@ class historial_repository:
     def buscar_por_gateway_ip(self, gateway_ip):
         return self.collection.find_one({"gateway_ip": gateway_ip})
 
-    # ---- BUSCAR POR ESTADO ----
-    """
-    Metodo para buscar un historial de red por su estado
-    @param estado: Estado a buscar
-    @return: Objeto Historial encontrado o None si no se encuentra
-    """
-    def buscar_por_estado(self, estado):
-        return self.collection.find_one({"estado": estado})
-
     # ---- BUSCAR POR FECHA ----
     """
     Metodo para buscar un historial de red por su fecha
