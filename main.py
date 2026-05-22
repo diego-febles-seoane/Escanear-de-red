@@ -1,10 +1,14 @@
-from repositories.historial_repository import historial_repository
+from services.scanner_service import scanner_service
+from repositories.activos_repository import activos_repository
 
-repo = historial_repository()
+scanner = scanner_service()
+scanner.escanar_y_guardar()
+repo = activos_repository()
 
-mac = "ff-ff-ff-ff-ff-ff"
-
-ultimo = repo.buscar_ultimo_registro_por_mac(mac)
-
-print(ultimo["_id"])
-print(ultimo["ultima_vez"])
+print("ACTIVOS: ")
+for dispositivo in repo.listar_todos():
+    print(
+        dispositivo.get("ip"),
+        dispositivo.get("nombre_dispositivo"),
+        dispositivo.get("tipo_dispositivo")
+    )

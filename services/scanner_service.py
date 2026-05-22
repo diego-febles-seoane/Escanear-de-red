@@ -3,6 +3,7 @@ from models.historial import Historial
 from repositories.historial_repository import historial_repository
 from services.vendor_service import vendor_service
 from services.device_classifier_service import device_classifier_service
+from repositories.activos_repository import activos_repository
 
 """
 Servicio de escaneo de red para obtener información de los dispositivos
@@ -17,6 +18,7 @@ class scanner_service:
         self.repo = historial_repository()
         self.vendor = vendor_service()
         self.classifier = device_classifier_service()
+        self.activos_repo = activos_repository()
 
     """
     Obtiene la ubicación de un dispositivo en base a su fabricante, tipo y IP
@@ -160,6 +162,11 @@ class scanner_service:
 
         if historiales: 
             ids = self.repo.insertar_muchos(historiales)
+
+            # ---- BORRADO E INSERCIÓN DE ACTIVOS ----
+            self.activos_repo.borrar_todo()
+            self.activos_repo.insertar_muchos(historiales)
+
             print("Registros insertados:", len(ids))
             return ids
 
