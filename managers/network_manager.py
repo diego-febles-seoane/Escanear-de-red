@@ -5,6 +5,7 @@ import subprocess
 from datetime import datetime
 import ipaddress
 import os
+import re
 """
 Clase network_manager que controla la lectura de datos con Scapy
 """
@@ -57,6 +58,32 @@ class network_manager:
             if info["ip"] or info["mac"]:
                 resultado.append(info)
         return resultado
+
+    # ---- OBTENER MAC LOCAL PARA LOS REGISTROS DE LOGS ----
+    """
+    Metodo para obtener la dirección MAC local del equipo actual
+    @return: Dirección MAC local como cadena de texto
+    """
+    def obtener_mac_local(self):
+        salida = subprocess.check_output(
+            "ipconfig /all"
+        ).decode(
+            errors="ignore"
+        )
+
+        mac = re.search(
+            r"([0-9A-F]{2}"
+            r"[-:]"
+            r"){5}"
+            r"([0-9A-F]{2})",
+
+            salida,
+
+            re.I
+        )
+        if mac:
+            return mac.group()
+        return None
 
     # ---- CONEXION A LA RED ----
     """

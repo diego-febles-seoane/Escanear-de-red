@@ -22,12 +22,15 @@ class logs_repository:
     @param nivel: Nivel de registro (INFO, WARNING, ERROR)
     @return: Mensaje de confirmación
     """
-    def guardar_log(self, accion, detalle, nivel):
+    def guardar_log(self, accion, detalle, nivel="INFO", mac=None, ip=None, nombre_red=None):
         log = {
             "fecha": datetime.now(),
             "accion": accion,
             "detalle": detalle,
-            "nivel": nivel
+            "nivel": nivel,
+            "mac": mac,
+            "ip": ip,
+            "nombre_red": nombre_red
         }
         self.collection.insert_one(log)
         return "Log guardado exitosamente"
@@ -50,11 +53,14 @@ class logs_repository:
     @param total: Total de dispositivos detectados
     @return: Mensaje de confirmación
     """
-    def log_escaneo_completo(self, total):
+    def log_escaneo_completo(self, total, mac=None, ip=None, nombre_red=None):
         return self.guardar_log(
             "ESCANEO_COMPLETO",
             f"Escaneo completo finalizado con {total} dispositivos detectados",
-            "INFO"
+            "INFO",
+            mac,
+            ip,
+            nombre_red
         )
     
     """
@@ -63,11 +69,14 @@ class logs_repository:
     @param ip: Dirección IP del dispositivo
     @return: Mensaje de confirmación
     """
-    def log_dispositivo_nuevo(self, mac, ip):
+    def log_dispositivo_nuevo(self, mac, ip, nombre_red=None):
         return self.guardar_log(
             "DISPOSITIVO_NUEVO",
             f"Dispositivo nuevo detectado con dirección MAC: {mac} y dirección IP: {ip}",
-            "INFO"
+            "INFO",
+            mac,
+            ip,
+            nombre_red
         )
     
     """

@@ -4,6 +4,7 @@ from repositories.historial_repository import historial_repository
 from services.vendor_service import vendor_service
 from services.device_classifier_service import device_classifier_service
 from repositories.activos_repository import activos_repository
+from repositories.logs_repository import logs_repository
 
 """
 Servicio de escaneo de red para obtener información de los dispositivos
@@ -19,6 +20,7 @@ class scanner_service:
         self.vendor = vendor_service()
         self.classifier = device_classifier_service()
         self.activos_repo = activos_repository()
+        self.logs_repo = logs_repository()
 
     """
     Obtiene la ubicación de un dispositivo en base a su fabricante, tipo y IP
@@ -118,6 +120,8 @@ class scanner_service:
                 self.repo.contar_por_mac(mac)
                 +1
             )
+            if veces_visto == 1:
+                    self.logs_repo.log_dispositivo_nuevo(mac, dispositivo.get("ip"))
             # ---- PRIMER Y ULTIMO REGISTRO ----
             mac = dispositivo.get("mac")
             fecha_actual = dispositivo.get("fecha")
@@ -166,6 +170,14 @@ class scanner_service:
             # ---- BORRADO E INSERCIÓN DE ACTIVOS ----
             self.activos_repo.borrar_todo()
             self.activos_repo.insertar_muchos(historiales)
+
+            # ---- LOG ESCANEO COMPLETO ----
+            self.logs_repo.log_escaneo_completo(
+                len(ids),
+                mac = self.network.obtener_mac_local(),
+                ip = self.network.obtener_gateway(),
+                nombre_red = self.network.obtener_nombre_red()
+            )
 
             print("Registros insertados:", len(ids))
             return ids
