@@ -17,6 +17,7 @@ class scanner_service:
         self.repo = historial_repository()
         self.vendor = vendor_service()
         self.classifier = device_classifier_service()
+        self.activos_repo = activos_repository()
 
     """
     Obtiene la ubicación de un dispositivo en base a su fabricante, tipo y IP
