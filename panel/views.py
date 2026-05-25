@@ -22,6 +22,22 @@ def get_historial_repo():
         print(f"Error connecting to MongoDB: {e}")
         return None
 
+def get_activos_repo():
+    try:
+        from repositories.activos_repository import activos_repository
+        return activos_repository()
+    except Exception as e:
+        print(f"Error loading activos repository: {e}")
+        return None
+
+def get_logs_repo():
+    try:
+        from repositories.logs_repository import logs_repository
+        return logs_repository()
+    except Exception as e:
+        print(f"Error loading logs repository: {e}")
+        return None
+
 def get_scanner_service():
     try:
         from services.scanner_service import scanner_service
@@ -118,3 +134,111 @@ def get_devices(request):
             return JsonResponse({'error': str(e)}, status=500)
     
     return JsonResponse({'error': 'No se pudo conectar al repositorio'}, status=500)
+
+def get_activos(request):
+    repo = get_activos_repo()
+    
+    if repo:
+        try:
+            data = repo.listar_todos()
+            for item in data:
+                item["_id"] = str(item["_id"])
+            
+            return JsonResponse(data, safe=False)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'No se pudo obtener los activos'}, status=500)
+
+def get_dashboard(request):
+    repo = get_activos_repo()
+
+    if repo:
+        try:
+            data = repo.obtener_dashboard()
+            return JsonResponse(data, safe=False)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'No se pudo obtener el dashboard'}, status=500)
+
+def get_logs(request):
+    repo = get_logs_repo()
+
+    if repo:
+        try:
+            data = repo.listar_todos()
+            for item in data:
+                item["_id"] = str(item["_id"])
+                item["fecha"] = str(item["fecha"])
+            
+            return JsonResponse(data, safe=False)
+        
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        
+    return JsonResponse({'error': 'No se pudo cargar los logs'}, status=500)
+
+def query_page(request):
+    return render(
+        request, "panel/query_builder.html"
+    )
+
+def query_campos(request):
+    try:
+        from services.query_builder import query_builder_Service
+        query = query_builder_Service()
+        campos = query.obtener_campos_disponibles()
+        return JsonResponse(campos, safe=False)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+@require_POST
+def ejecutar_query(request):
+    try:
+        import json
+        from services.query_builder_service import query_builder_service
+
+        body = json.loads(request.body)
+
+        query = query_builder_service()
+
+        limite = int(body.get("limite", 100))
+
+        orden_campo = body.get("orden")
+        orden = {}
+
+        if orden_campo:
+            orden = {
+                "campo": f"historial.{orden_campo}",
+                "direccion": "desc"
+            }
+
+        filtros = []
+
+        filtro = body.get("filtro")
+
+        if filtro and filtro.get("campo") and filtro.get("valor"):
+            filtros.append({
+                "campo": f"historial.{filtro['campo']}",
+                "operador": "contiene",
+                "valor": filtro["valor"]
+            })
+
+        consulta = query.crear_consulta(
+            coleccion_base="historial",
+            campos=body["campos"],
+            filtros=filtros,
+            orden=orden,
+            limite=limite
+        )
+
+        resultado = query.ejecutar_consulta(consulta)
+
+        return JsonResponse(resultado, safe=False)
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

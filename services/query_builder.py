@@ -115,18 +115,23 @@ class query_builder_Service:
     @param colecciones_usadas: Lista de colecciones usadas en la consulta
     @return: Lista de joins a realizar en la consulta
     """
-    def genera_joins_automaticos(self, coleccion_base, colecciones_usadas):
+    def genera_joins_automaticos(self, coleccion_base, colecciones):
         joins = []
-
-        for coleccion in colecciones_usadas:
-            if coleccion != coleccion_base:
-                joins.append({
-                    "coleccion": coleccion,
-                    "campo_local": "mac",
-                    "campo_externo": "mac",
-                    "tipo": "left"
-                })
-
+        for coleccion in colecciones:
+            if coleccion == coleccion_base:
+                continue
+            if coleccion == "logs":
+                continue
+            joins.append({
+                "coleccion":
+                coleccion,
+                "campo_local":
+                "mac",
+                "campo_externo":
+                "mac",
+                "tipo":
+                "inner"
+            })
         return joins
 
     """

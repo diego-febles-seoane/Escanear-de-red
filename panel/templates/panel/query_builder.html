@@ -1,0 +1,142 @@
+{% extends 'panel/base.html' %}
+
+{% block content %}
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Consulta personalizada</h2>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title">Constructor de consultas</h5>
+    </div>
+
+    <div class="card-body">
+
+        <label>Límite</label>
+        <input type="number" id="limite" class="form-control" value="100">
+
+        <br>
+
+        <label>Ordenar por</label>
+        <select id="orden" class="form-select">
+            <option value="">Sin ordenar</option>
+            <option value="fecha">Fecha</option>
+            <option value="ip">IP</option>
+            <option value="fabricante">Fabricante</option>
+        </select>
+
+        <br>
+
+        <label>Filtrar por</label>
+        <select id="filtro_campo" class="form-select">
+            <option value="">Sin filtro</option>
+            <option value="ip">IP</option>
+            <option value="mac">MAC</option>
+            <option value="fabricante">Fabricante</option>
+            <option value="tipo_dispositivo">Tipo dispositivo</option>
+            <option value="ubicacion">Ubicación</option>
+            <option value="fecha">Fecha</option>
+        </select>
+
+        <br>
+
+        <label>Valor filtro</label>
+        <label>Fecha desde</label>
+        <input type="date" id="fecha_desde" class="form-control">
+        <br>
+        <label>Fecha hasta</label>
+        <input type="date" id="fecha_hasta" class="form-control">
+        <br>
+        <br>
+        <label>Campos</label>
+        <div id="campos"></div>
+        <br>
+
+        <button class="btn btn-laberit" id="buscar">
+            Ejecutar consulta
+        </button>
+
+        <hr>
+
+        <div id="resultado"></div>
+
+    </div>
+</div>
+
+<script>
+    fetch('{% url "query_campos" %}')
+        .then(response => response.json())
+        .then(data => {
+            const contenedor = document.getElementById("campos");
+            contenedor.innerHTML = "";
+
+            data.forEach(campo => {
+                contenedor.innerHTML += `
+            <div class="form-check">
+                <input
+                    class="form-check-input campo-check"
+                    type="checkbox"
+                    value="${campo.campo}"
+                    id="${campo.campo}"
+                >
+                <label class="form-check-label" for="${campo.campo}">
+                    ${campo.label}
+                </label>
+            </div>
+        `;
+            });
+        });
+
+    document.getElementById("buscar").addEventListener("click", function () {
+        const camposSeleccionados = Array.from(
+            document.querySelectorAll(".campo-check:checked")
+        ).map(check => check.value);
+
+        fetch('{% url "ejecutar_query" %}', {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+
+                campos:
+                    camposSeleccionados,
+                limite:
+                    document.getElementById(
+                        "limite"
+                    ).value,
+                orden:
+                    document.getElementById(
+                        "orden"
+                    ).value,
+                filtro: {
+                    campo:
+                        document.getElementById(
+                            "filtro_campo"
+                        ).value,
+                    valor:
+                        document.getElementById(
+                            "filtro_valor"
+                        ).value
+                },
+                fecha_desde:
+                    document.getElementById(
+                        "fecha_desde"
+                    ).value,
+                fecha_hasta:
+                    document.getElementById(
+                        "fecha_hasta"
+                    ).value
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("resultado").innerHTML =
+                    "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+            });
+    });
+</script>
+{% endblock %}
