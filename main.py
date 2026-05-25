@@ -1,10 +1,25 @@
-from services.scanner_service import scanner_service
-from repositories.logs_repository import logs_repository
+from services.query_builder import query_builder_Service
+from repositories.nombres_repository import nombres_repository
 
-scanner = scanner_service()
-scanner.escanar_y_guardar()
+repo = nombres_repository()
 
-logs = logs_repository()
-print("\nLOGS:\n")
-for log in (logs.listar_todos()):
-    print(log)
+query = query_builder_Service()
+
+consulta1 = repo.guardar_nombre(
+    "98-5f-41-61-79-7a",
+    "Portátil Alejandro"
+)
+consulta = (
+    query.crear_consulta(
+        coleccion_base="historial",
+        campos=[
+            "historial.ip",
+            "nombres.nombre"
+        ]
+    )
+)
+resultado = (
+    query.ejecutar_consulta(consulta)
+)
+for r in resultado:
+    print(r)

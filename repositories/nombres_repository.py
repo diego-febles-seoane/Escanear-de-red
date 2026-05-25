@@ -22,6 +22,7 @@ class nombres_repository:
     @return: Mensaje de confirmación o error
     """
     def guardar_nombre(self, mac, nombre):
+        mac = self.normalizar_mac(mac)
         historial_repo = historial_repository()
         existe = historial_repo.buscar_por_mac(mac)
         if not existe:
@@ -54,6 +55,7 @@ class nombres_repository:
     @return: Mensaje de confirmación o error
     """
     def actualizar_nombre(self, mac, nombre_nuevo):
+        mac = self.normalizar_mac(mac)
         resulstado = self.collection.update_one(
             {"mac": mac},
             {"$set": {"nombre": nombre_nuevo}},
@@ -70,6 +72,7 @@ class nombres_repository:
     @return: Objeto Nombre encontrado o None si no se encuentra
     """
     def buscar_por_mac(self, mac):
+        mac = self.normalizar_mac(mac)
         return self.collection.find_one({"mac": mac})
     
     """
@@ -78,3 +81,6 @@ class nombres_repository:
     """
     def listar_todos(self):
         return list(self.collection.find())
+
+    def normalizar_mac(self, mac):
+        return (mac.lower().replace(":", "-"))
