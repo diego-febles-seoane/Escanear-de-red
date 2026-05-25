@@ -1,13 +1,11 @@
-from repositories.historial_repository import historial_repository
+from services.export_service import export_service
 
-repo = historial_repository()
+exportador = export_service()
 
-mac = "ff-ff-ff-ff-ff-ff"
+datos = exportador.obtener_coleccion_completa(
+    "historial",
+    limite=1000
+)
+exportador.exportar_excel(datos, "resultado.xlsx")
 
-ultimo = repo.buscar_ultimo_registro_por_mac(mac)
-
-print(ultimo["_id"])
-print(ultimo["ultima_vez"])
-
-datos = repo.listar_todos_limpio()
-print(datos)
+print("Exportación completada")
