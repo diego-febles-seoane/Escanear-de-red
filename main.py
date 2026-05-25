@@ -1,25 +1,11 @@
-from services.query_builder import query_builder_Service
-from repositories.nombres_repository import nombres_repository
+from services.export_service import export_service
 
-repo = nombres_repository()
+exportador = export_service()
 
-query = query_builder_Service()
+datos = exportador.obtener_coleccion_completa(
+    "historial",
+    limite=1000
+)
+exportador.exportar_excel(datos, "resultado.xlsx")
 
-consulta1 = repo.guardar_nombre(
-    "98-5f-41-61-79-7a",
-    "Portátil Alejandro"
-)
-consulta = (
-    query.crear_consulta(
-        coleccion_base="historial",
-        campos=[
-            "historial.ip",
-            "nombres.nombre"
-        ]
-    )
-)
-resultado = (
-    query.ejecutar_consulta(consulta)
-)
-for r in resultado:
-    print(r)
+print("Exportación completada")
