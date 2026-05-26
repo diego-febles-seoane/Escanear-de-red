@@ -1,0 +1,109 @@
+{% extends 'panel/base.html' %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h2 class="text-3xl font-bold mb-2">Alertas de Seguridad</h2>
+        <p class="text-gray-400 text-sm">Registro histórico de alertas y cambios detectados</p>
+    </div>
+</div>
+
+<div class="glass-card rounded-2xl overflow-hidden">
+    <div class="p-6 border-b border-white/10 flex justify-between items-center">
+        <h3 class="text-xl font-semibold">Historial de Alertas</h3>
+        <div id="pagination-info" class="text-sm text-gray-400"></div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-white/5 text-gray-400 text-xs uppercase">
+                <tr>
+                    <th class="p-5 text-left">IP</th>
+                    <th class="p-5 text-left">MAC</th>
+                    <th class="p-5 text-left">Tipo</th>
+                    <th class="p-5 text-left">Nivel</th>
+                    <th class="p-5 text-left">Mensaje</th>
+                    <th class="p-5 text-left">Fecha</th>
+                </tr>
+            </thead>
+            <tbody id="alertas-tbody">
+                <!-- Se carga vía JavaScript -->
+            </tbody>
+        </table>
+    </div>
+    <!-- Paginación -->
+    <div class="p-4 border-t border-white/10 flex justify-center gap-2" id="pagination-controls">
+    </div>
+</div>
+<!-- Datos iniciales desde Django -->
+<script id="alertas-data" type="application/json">
+    {{ alertas|safe }}
+</script>
+<script>
+    const tableBody = document.getElementById('alertas-tbody');
+    const paginationControls = document.getElementById('pagination-controls');
+    const paginationInfo = document.getElementById('pagination-info');
+
+    // Cargar datos desde el script tag
+    const allAlerts = JSON.parse(document.getElementById('alertas-data').textContent.replace(/'/g, '"'));
+    let currentPage = 1;
+    const recordsPerPage = 15;
+
+    function displayAlerts() {
+        tableBody.innerHTML = '';
+        const start = (currentPage - 1) * recordsPerPage;
+        const end = start + recordsPerPage;
+        const paginatedItems = allAlerts.slice(start, end);
+
+        if (paginatedItems.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="p-10 text-center text-gray-500">No se han detectado alertas hasta el momento.</td></tr>';
+            return;
+        }
+
+        paginatedItems.forEach(alerta => {
+            let nivelHtml = '';
+            if (alerta.nivel === 'WARNING') {
+                nivelHtml = `<span class="px-3 py-1 rounded-full text-xs font-bold bg-yellow-500/20 text-yellow-500 border border-yellow-500/50">WARNING</span>`;
+            } else if (alerta.nivel === 'CRITICAL') {
+                nivelHtml = `<span class="px-3 py-1 rounded-full text-xs font-bold bg-red-500/20 text-red-500 border border-red-500/50">CRITICAL</span>`;
+            } else {
+                nivelHtml = `<span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-500 border border-blue-500/50">${alerta.nivel}</span>`;
+            }
+
+            tableBody.innerHTML += `
+                <tr class="table-row border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <td class="p-5 text-sm">${alerta.ip || '-'}</td>
+                    <td class="p-5 text-sm font-mono">${alerta.mac || '-'}</td>
+                    <td class="p-5 text-sm font-semibold text-cyan-400">${alerta.tipo}</td>
+                    <td class="p-5">${nivelHtml}</td>
+                    <td class="p-5 text-sm text-gray-300">${alerta.mensaje}</td>
+                    <td class="p-5 text-sm">${alerta.fecha}</td>
+                </tr>
+            `;
+        });
+
+        updatePaginationControls();
+    }
+    function updatePaginationControls() {
+        const totalPages = Math.ceil(allAlerts.length / recordsPerPage);
+        paginationControls.innerHTML = '';
+        paginationInfo.innerText = `Pág. ${currentPage}/${totalPages || 1} (${allAlerts.length} alertas)`;
+
+        if (totalPages <= 1) return;
+
+        const prevBtn = document.createElement('button');
+        prevBtn.innerText = '«';
+        prevBtn.className = `px-3 py-1 rounded bg-white/5 hover:bg-white/10 ${currentPage === 1 ? 'opacity-30 cursor-not-allowed' : ''}`;
+        prevBtn.onclick = () => { if(currentPage > 1) { currentPage--; displayAlerts(); } };
+        paginationControls.appendChild(prevBtn);
+
+        const nextBtn = document.createElement('button');
+        nextBtn.innerText = '»';
+        nextBtn.className = `px-3 py-1 rounded bg-white/5 hover:bg-white/10 ${currentPage === totalPages ? 'opacity-30 cursor-not-allowed' : ''}`;
+        nextBtn.onclick = () => { if(currentPage < totalPages) { currentPage++; displayAlerts(); } };
+        paginationControls.appendChild(nextBtn);
+    }
+
+    // Inicializar
+    displayAlerts();
+</script>
+{% endblock %}

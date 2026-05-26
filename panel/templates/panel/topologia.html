@@ -6,97 +6,284 @@
         <h2 class="text-3xl font-bold mb-2">Topología de red</h2>
         <p class="text-gray-400 text-sm">Visualización de dispositivos activos en la red</p>
     </div>
-    <button id="actualizarTopologia" class="bg-gradient-to-r from-green-500 to-cyan-600 px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all">
-        <i class="fa-solid fa-sync-alt"></i> Actualizar topología
+    <button id="actualizarTopologia" class="bg-gradient-to-r from-green-500 to-cyan-600 px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all flex items-center gap-2">
+        <i class="fa-solid fa-sync-alt" id="syncIcon"></i> 
+        <span id="btnText">Actualizar topología</span>
     </button>
 </div>
 
 <div class="glass-card rounded-2xl overflow-hidden">
-    <div class="p-6 border-b border-white/10">
-        <h3 class="text-xl font-semibold">Dispositivos activos</h3>
+    <div class="p-6 border-b border-white/10 flex justify-between items-center">
+        <h3 class="text-xl font-semibold">Mapa de Red</h3>
+        <span class="text-xs text-gray-500 italic">Haz clic en un dispositivo para expandir su información</span>
     </div>
-    <div class="p-6">
-        <div id="network" style="height:650px; background: rgba(0,0,0,0.3); border-radius: 12px;"></div>
+    <div class="p-6 relative">
+        <div id="network" style="height:700px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);"></div>
+        
+        <!-- Overlay de carga -->
+        <div id="loadingOverlay" class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-12 z-[9999]" style="display: none;">
+            <div class="text-center bg-gray-900/90 p-10 rounded-2xl border border-white/10 shadow-2xl relative">
+                <!-- Botón de cierre manual (emergencia) -->
+                <button type="button" id="closeOverlayBtn" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors cursor-pointer p-2">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+                
+                <div class="animate-spin text-cyan-400 text-5xl mb-6"><i class="fa-solid fa-circle-notch"></i></div>
+                <p class="text-white font-bold text-xl mb-2" id="loadingText">Analizando red...</p>
+                <p class="text-gray-400 text-sm">Actualizando mapa de dispositivos</p>
+            </div>
+        </div>
     </div>
 </div>
 
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 
 <script>
-function dibujarTopologia(data) {
-    const nodes = []
-    const edges = []
+let network = null;
+let nodes = new vis.DataSet();
+let edges = new vis.DataSet();
 
-    nodes.push({
+function getLabel(device, expanded = false) {
+    const nombre = device.nombre_dispositivo || "Dispositivo";
+    const ip = device.ip || "-";
+    const mac = device.mac || "-";
+    const riesgo = device.riesgo || "BAJO";
+    const fabricante = device.fabricante || "-";
+    const tipo = device.tipo_dispositivo || "-";
+
+    if (!expanded) {
+        return `${nombre}\n${ip}`;
+    }
+
+    return `[ ${nombre} ]\n` +
+           `------------------------\n` +
+           `IP: ${ip}\n` +
+           `MAC: ${mac}\n` +
+           `FAB: ${fabricante}\n` +
+           `TIPO: ${tipo}\n` +
+           `RIESGO: ${riesgo}\n` +
+           `------------------------\n` +
+           `[ CERRAR ]`;
+}
+
+function dibujarTopologia(data) {
+    nodes.clear();
+    edges.clear();
+
+    // Nodo Central
+    nodes.add({
         id: "gateway",
-        label: "Gateway / Router",
+        label: "GATEWAY / ROUTER",
         shape: "box",
+        margin: 15,
         color: {
-            background: '#22c55e',
-            border: '#06b6d4'
+            background: '#10b981',
+            border: '#059669',
+            highlight: { background: '#10b981', border: '#059669' }
         },
-        font: { color: '#ffffff' }
-    })
+        font: { color: '#ffffff', face: 'monospace', size: 16, align: 'center', bold: true },
+        x: 0, y: 0 // Posición inicial central
+    });
 
     data.forEach((device, index) => {
-        let nodeId = device.mac || device.ip || index
-
-        nodes.push({
+        const nodeId = device.mac || device.ip || `node_${index}`;
+        
+        nodes.add({
             id: nodeId,
-            label: (device.nombre_dispositivo || "Dispositivo") + "\n" + (device.ip || "-") + "\n" + (device.riesgo || "SIN RIESGO"),
-            title: "MAC: " + (device.mac || "-") + "<br>" +
-                   "Fabricante: " + (device.fabricante || "-") + "<br>" +
-                   "Tipo: " + (device.tipo_dispositivo || "-"),
-            shape: "dot",
+            label: getLabel(device),
+            shape: "box",
+            margin: 12,
             color: {
-                background: '#06b6d4',
-                border: '#22c55e'
+                background: '#1f2937',
+                border: '#374151',
+                highlight: { background: '#111827', border: '#10b981' }
             },
-            font: { color: '#ffffff' }
-        })
+            font: { color: '#e5e7eb', face: 'monospace', size: 12, align: 'left' },
+            deviceData: device,
+            isExpanded: false
+        });
 
-        edges.push({
+        edges.add({
             from: "gateway",
             to: nodeId,
-            color: { color: '#4b5563' }
+            color: { color: 'rgba(255,255,255,0.15)', highlight: '#10b981' },
+            width: 1,
+            length: 180 // Distancia más corta para evitar que se dispersen
+        });
+    });
+
+    if (!network) {
+        const container = document.getElementById("network");
+        const networkData = { nodes: nodes, edges: edges };
+        const options = {
+            physics: {
+                enabled: true,
+                solver: 'forceAtlas2Based',
+                forceAtlas2Based: {
+                    gravitationalConstant: -150,
+                    centralGravity: 0.02,
+                    springLength: 200,
+                    springConstant: 0.08,
+                    damping: 0.4,
+                    avoidOverlap: 1 // Crucial para evitar solapamiento
+                },
+                stabilization: { 
+                    enabled: true,
+                    iterations: 1000,
+                    updateInterval: 50
+                }
+            },
+            interaction: {
+                hover: true,
+                dragNodes: true,
+                dragView: true,
+                zoomView: true
+            },
+            layout: {
+                improvedLayout: true
+            }
+        };
+        network = new vis.Network(container, networkData, options);
+
+        // Centrar al estabilizar
+        network.on("stabilizationIterationsDone", function () {
+            network.fit({
+                animation: { duration: 1000, easingFunction: "easeInOutQuad" }
+            });
+        });
+
+        // Evento de clic
+        network.on("click", function(params) {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                const node = nodes.get(nodeId);
+                
+                if (nodeId === "gateway") return;
+
+                const newExpanded = !node.isExpanded;
+                
+                if (newExpanded) {
+                    // Cerrar otros
+                    nodes.forEach(n => {
+                        if (n.id !== nodeId && n.isExpanded) {
+                            nodes.update({
+                                id: n.id,
+                                label: getLabel(n.deviceData, false),
+                                isExpanded: false,
+                                font: { size: 12 },
+                                color: { background: '#1f2937' }
+                            });
+                        }
+                    });
+                }
+
+                nodes.update({
+                    id: nodeId,
+                    label: getLabel(node.deviceData, newExpanded),
+                    isExpanded: newExpanded,
+                    font: { size: newExpanded ? 14 : 12 },
+                    color: { background: newExpanded ? '#111827' : '#1f2937' }
+                });
+
+                // Suavizar el ajuste
+                setTimeout(() => {
+                    network.fit({
+                        nodes: [nodeId, "gateway"],
+                        animation: { duration: 500, easingFunction: "easeOutQuad" }
+                    });
+                }, 100);
+            }
+        });
+    } else {
+        network.fit();
+    }
+}
+
+function pollProgress() {
+    fetch('{% url "get_progress" %}')
+        .then(r => r.json())
+        .then(data => {
+            console.log("Polling progress:", data);
+            const loadingText = document.getElementById('loadingText');
+            
+            if (data.status === 'running') {
+                if (loadingText) loadingText.innerText = data.message || 'Analizando red...';
+                setTimeout(pollProgress, 1000);
+            } else {
+                // Si el estado es 'finished', 'error', 'idle' o cualquier otro que no sea 'running'
+                console.log("Estado final detectado:", data.status);
+                
+                fetch('{% url "get_activos" %}')
+                    .then(r => r.json())
+                    .then(devices => {
+                        dibujarTopologia(devices);
+                    })
+                    .catch(err => console.error("Error al obtener activos:", err))
+                    .finally(() => {
+                        setLoading(false); // SIEMPRE ocultar al final
+                    });
+            }
         })
-    })
+        .catch(err => {
+            console.error("Error en polling:", err);
+            // Si hay error de red persistente, ocultar tras unos reintentos o inmediatamente
+            setLoading(false); 
+        });
+}
 
-    let container = document.getElementById("network")
-    let networkData = {
-        nodes: new vis.DataSet(nodes),
-        edges: new vis.DataSet(edges)
+function setLoading(isLoading) {
+    const btn = document.getElementById("actualizarTopologia");
+    const icon = document.getElementById("syncIcon");
+    const text = document.getElementById("btnText");
+    const overlay = document.getElementById("loadingOverlay");
+
+    if (isLoading) {
+        btn.disabled = true;
+        icon.classList.add("fa-spin");
+        text.innerText = "Escaneando...";
+        overlay.style.display = "flex";
+    } else {
+        btn.disabled = false;
+        icon.classList.remove("fa-spin");
+        text.innerText = "Actualizar topología";
+        overlay.style.display = "none";
+        // Forzar limpieza si el mapa sigue borroso por algún CSS residual
+        document.getElementById("network").style.filter = "none";
     }
+}
 
-    let options = {
-        physics: { enabled: true },
-        interaction: { hover: true },
-        nodes: {
-            borderWidth: 2,
-            shadow: true
-        },
-        edges: {
-            width: 2
-        }
-    }
+// Asignar evento al botón de cierre de emergencia
+document.getElementById("closeOverlayBtn").addEventListener("click", function(e) {
+    e.preventDefault();
+    setLoading(false);
+});
 
-    new vis.Network(container, networkData, options)
+function actualizar() {
+    setLoading(true);
+    fetch("{% url 'topologia_datos' %}")
+        .then(r => r.json())
+        .then(res => {
+            pollProgress();
+            if (res.data) dibujarTopologia(res.data);
+        })
+        .catch(() => {
+            setLoading(false);
+        });
 }
 
 /* CARGA INICIAL */
-fetch("{% url 'get_activos' %}")
+fetch('{% url "get_progress" %}')
     .then(r => r.json())
     .then(data => {
-        dibujarTopologia(data)
-    })
+        if (data.status === 'running') {
+            setLoading(true);
+            pollProgress();
+        }
+        fetch('{% url "get_activos" %}')
+            .then(r => r.json())
+            .then(devices => dibujarTopologia(devices));
+    });
 
-/* BOTON ACTUALIZAR */
-document.getElementById("actualizarTopologia").addEventListener("click", function() {
-    fetch("{% url 'topologia_datos' %}")
-        .then(r => r.json())
-        .then(data => {
-            dibujarTopologia(data)
-        })
-})
+document.getElementById("actualizarTopologia").addEventListener("click", actualizar);
 </script>
 {% endblock %}

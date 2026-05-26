@@ -107,6 +107,12 @@ class network_manager:
             stderr = subprocess.DEVNULL
         )
 
+    def hacer_ping_sweep(self, rango):
+        from concurrent.futures import ThreadPoolExecutor
+        ips = [f"{rango}.{i}" for i in range(1, 255)]
+        with ThreadPoolExecutor(max_workers=50) as executor:
+            executor.map(self.hacer_ping, ips)
+
     # ---- LECTOR DE TABLA ARP ----
     """
     Metodo para leer la tabla ARP actual  
@@ -187,20 +193,25 @@ class network_manager:
         """
         for linea in tabla.splitlines():
             partes = linea.strip().split()
-            """
-            Si la línea no contiene información de un dispositivo, saltarla
-            @return: None
-            """
             if len(partes) < 3:
                 continue
+            
             ip = partes[0]
-            mac = partes[1]
+            mac_raw = partes[1]
             tipo = partes[2]
-            """
-            Si la dirección IP y la dirección MAC son válidas, agregarla a la lista de dispositivos
-            @return: None
-            """
-            if ip.count(".") == 3 and "-" in mac:
+
+            # Limpiar la MAC (quitar paréntesis si los hay y convertir a formato estándar)
+            mac = mac_raw.replace("(", "").replace(")", "").replace("-", ":").lower()
+            
+            # Validar IP y MAC
+            es_ip = re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", ip)
+            # Aceptamos formatos de MAC con o sin ceros a la izquierda (Windows a veces los quita en arp -a)
+            es_mac = re.match(r"^([0-9a-f]{1,2}[:]){5}([0-9a-f]{1,2})$", mac)
+
+            if es_ip and es_mac:
+                # Normalizar MAC a 00:00:00:00:00:00
+                mac_parts = mac.split(":")
+                mac = ":".join([p.zfill(2) for p in mac_parts])
                 clave = (ip, mac)
 
                 if clave in vistos:
@@ -217,6 +228,9 @@ class network_manager:
                     "fecha": datetime.now(),
                     "estado": "Activo"
                 })
+        if not dispositivos:
+            print("No se encontraron dispositivos válidos en la tabla ARP. Contenido raw:")
+            print(tabla[:500]) # Mostrar solo el principio para no saturar
         return dispositivos 
 
     # ---- INFORMACION DEL RANGO IP ----

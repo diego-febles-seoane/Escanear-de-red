@@ -10,84 +10,30 @@ class query_builder_Service:
     def obtener_campos_disponibles(self):
         return [
             # ---- HISTORIAL ----
-            {
-                "label": "IP",
-                "campo": "historial.ip",
-                "tipo_input": "text"
-            },
-            {
-                "label": "MAC",
-                "campo": "historial.mac",
-                "tipo_input": "text"
-            },
-            {
-                "label": "Fecha",
-                "campo": "historial.fecha",
-                "tipo_input": "date"
-            },
-            {
-                "label": "Fabricante",
-                "campo": "historial.fabricante",
-                "tipo_input": "text"
-            },
-            {
-                "label": "Tipo dispositivo",
-                "campo": "historial.tipo",
-                "tipo_input": "text"
-            },
-            {
-                "label": "Ubicación",
-                "campo": "historial.ubicacion",
-                "tipo_input": "text"
-            },
-            {
-                "label": "Veces visto",
-                "campo": "historial.veces_visto",
-                "tipo_input": "number"
-            },
+            { "label": "IP", "campo": "historial.ip", "tipo_input": "text" },
+            { "label": "MAC", "campo": "historial.mac", "tipo_input": "text" },
+            { "label": "Fecha", "campo": "historial.fecha", "tipo_input": "date" },
+            { "label": "Fabricante", "campo": "historial.fabricante", "tipo_input": "text" },
+            { "label": "Tipo dispositivo", "campo": "historial.tipo_dispositivo", "tipo_input": "text" },
+            { "label": "Ubicación", "campo": "historial.ubicacion", "tipo_input": "text" },
+            { "label": "Veces visto", "campo": "historial.veces_visto", "tipo_input": "number" },
+            { "label": "Host Name", "campo": "historial.host_name", "tipo_input": "text" },
+            { "label": "Nombre Red", "campo": "historial.nombre_red", "tipo_input": "text" },
+            { "label": "Gateway IP", "campo": "historial.gateway_ip", "tipo_input": "text" },
+            { "label": "Riesgo", "campo": "historial.riesgo", "tipo_input": "text" },
+            { "label": "Nombre Dispositivo", "campo": "historial.nombre_dispositivo", "tipo_input": "text" },
+            { "label": "Puertos", "campo": "historial.puertos", "tipo_input": "text" },
+            { "label": "Primera Vez", "campo": "historial.primera_vez", "tipo_input": "date" },
+            { "label": "Última Vez", "campo": "historial.ultima_vez", "tipo_input": "date" },
             # ---- ACTIVOS ----
-            {
-                "label": "Estado",
-                "campo": "activos.estado",
-                "tipo_input": "select"
-            },
-            {
-                "label": "Última vez",
-                "campo": "activos.ultima_vez",
-                "tipo_input": "date"
-            },
-            {
-                "label": "Primera vez",
-                "campo": "activos.primera_vez",
-                "tipo_input": "date"
-            },
+            { "label": "Estado", "campo": "activos.estado", "tipo_input": "select" },
             # ---- NOMBRES ----
-            {
-                "label": "Nombre MAC",
-                "campo": "nombres.nombre",
-                "tipo_input": "text"
-            },
+            { "label": "Nombre Personalizado", "campo": "nombres.nombre", "tipo_input": "text" },
             # ---- LOGS ----
-            {
-                "label": "Acción",
-                "campo": "logs.accion",
-                "tipo_input": "select"
-            },
-            {
-                "label": "Nivel",
-                "campo": "logs.nivel",
-                "tipo_input": "select"
-            },
-            {
-                "label": "Detalle",
-                "campo": "logs.detalle",
-                "tipo_input": "text"
-            },
-            {
-                "label": "Fecha log",
-                "campo": "logs.fecha_log",
-                "tipo_input": "date"
-            }
+            { "label": "Acción Log", "campo": "logs.accion", "tipo_input": "select" },
+            { "label": "Nivel Log", "campo": "logs.nivel", "tipo_input": "select" },
+            { "label": "Detalle Log", "campo": "logs.detalle", "tipo_input": "text" },
+            { "label": "Fecha Log", "campo": "logs.fecha_log", "tipo_input": "date" }
         ]
 
     """
@@ -97,17 +43,18 @@ class query_builder_Service:
     @return: Lista de colecciones usadas en la consulta
     """
     def opbtener_campos_usadas(self, campos, filtros=None):
-        coleciones = set()
+        colecciones = set()
 
         for campo in campos:
-            coleciones.add(campo.split(".")[0])
+            colecciones.add(campo.split(".")[0])
         
         filtros = filtros or []
 
         for filtro in filtros:
-            coleciones.add(filtro["campo"].split(".")[0])
+            if "campo" in filtro:
+                colecciones.add(filtro["campo"].split(".")[0])
         
-        return list(coleciones)
+        return list(colecciones)
 
     """
     Genera los joins automáticos para la consulta
@@ -120,17 +67,17 @@ class query_builder_Service:
         for coleccion in colecciones:
             if coleccion == coleccion_base:
                 continue
+            
+            # Mapeo de campos de unión
+            campo_union = "mac"
             if coleccion == "logs":
-                continue
+                campo_union = "mac" # logs también usa mac
+
             joins.append({
-                "coleccion":
-                coleccion,
-                "campo_local":
-                "mac",
-                "campo_externo":
-                "mac",
-                "tipo":
-                "inner"
+                "coleccion": coleccion,
+                "campo_local": "mac",
+                "campo_externo": campo_union,
+                "tipo": "inner" # Usar inner para asegurar que solo salgan si existen en ambas
             })
         return joins
 

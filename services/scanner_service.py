@@ -70,12 +70,11 @@ class scanner_service:
         """
         Escanea cada IP en el rango para obtener información de los dispositivos en la red
         """
-        for i in range(1, 255):
-            ip = f"{rango}.{i}"
-            self.network.hacer_ping(ip)
+        self.network.hacer_ping_sweep(rango)
 
 
         dispositivos = self.network.obtener_dispositivos_desde_arp()
+        print(f"Dispositivos encontrados en ARP: {len(dispositivos)}")
 
 
         historiales = []
@@ -211,11 +210,11 @@ class scanner_service:
             historiales.append(historial)
 
 
+        # ---- BORRADO E INSERCIÓN DE ACTIVOS ----
+        self.activos_repo.borrar_todo()
+        
         if historiales:
             ids = self.repo.insertar_muchos(historiales)
-
-            # ---- BORRADO E INSERCIÓN DE ACTIVOS ----
-            self.activos_repo.borrar_todo()
             self.activos_repo.insertar_muchos(historiales)
 
             # ---- LOG ESCANEO COMPLETO ----

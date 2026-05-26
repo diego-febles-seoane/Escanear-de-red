@@ -94,6 +94,14 @@ def get_logs_repo():
         print(f"Error loading logs repository: {e}")
         return None
 
+def get_alertas_repo():
+    try:
+        from repositories.alertas_repository import alertas_repository
+        return alertas_repository()
+    except Exception as e:
+        print(f"Error loading alertas repository: {e}")
+        return None
+
 def get_scanner_service():
     try:
         from services.scanner_service import scanner_service
@@ -138,24 +146,63 @@ def scan(request):
     if scan_progress['status'] == 'running':
         return JsonResponse({'status': 'already_running'})
     
+    import json
+    tipo_escaneo = "normal"
+    try:
+        body = json.loads(request.body)
+        tipo_escaneo = body.get('tipo_escaneo', 'normal')
+    except:
+        # Si no es JSON (p.ej. FormData), intentamos obtenerlo de POST
+        tipo_escaneo = request.POST.get('tipo_escaneo', 'normal')
+
     scan_progress = {
         'percentage': 0,
         'status': 'running',
-        'message': 'Iniciando escaneo...'
+        'message': f'Iniciando escaneo {tipo_escaneo}...'
     }
     
-    def run_scan():
+    def run_scan(t_escaneo, m_user, m_pass, m_host):
         global scan_progress
         try:
+            # Restaurar contexto de MongoDB en el nuevo hilo
+            set_mongo_session_data(m_user, m_pass, m_host)
+            
             scanner = get_scanner_service()
             if not scanner:
                 raise Exception("No se pudo inicializar el servicio de escaneo")
             
-            scan_progress['percentage'] = 10
-            scan_progress['message'] = 'Escaneando red...'
+            scan_progress['percentage'] = 5
+            scan_progress['message'] = 'Iniciando escaneo de red...'
             
-            ids = scanner.escanar_y_guardar()
+            # 1. Obtener rango
+            rango = scanner.network.obtener_rango_ip()
+            scan_progress['message'] = f'Escaneando rango {rango}.0/24...'
             
+            # Ping Sweep optimizado
+            scanner.network.hacer_ping_sweep(rango)
+
+            scan_progress['percentage'] = 40
+            scan_progress['message'] = 'Obteniendo dispositivos activos...'
+            dispositivos = scanner.network.obtener_dispositivos_desde_arp()
+            
+            if not dispositivos:
+                scan_progress['percentage'] = 100
+                scan_progress['status'] = 'finished'
+                scan_progress['message'] = 'No se encontraron dispositivos'
+                return
+
+            total = len(dispositivos)
+            scan_progress['message'] = f'Procesando {total} dispositivos...'
+            
+            # 3. Procesar cada dispositivo (Simulación de progreso)
+            for idx, dispositivo in enumerate(dispositivos):
+                scan_progress['percentage'] = 40 + int(((idx + 1) / total) * 50)
+                scan_progress['message'] = f'Analizando {dispositivo.get("ip")} ({idx+1}/{total})...'
+                
+            # Realizar el escaneo real
+            ids = scanner.escanar_y_guardar(tipo_escaneo=t_escaneo)
+            
+            # Limpiar caché de estadísticas al terminar un escaneo para que las gráficas se actualicen
             scan_progress['percentage'] = 100
             scan_progress['status'] = 'finished'
             scan_progress['message'] = 'Escaneo completado'
@@ -164,7 +211,11 @@ def scan(request):
             scan_progress['message'] = f'Error: {str(e)}'
             print(f"Scan error: {e}")
     
-    thread = threading.Thread(target=run_scan)
+    m_user = request.session.get('mongo_user')
+    m_pass = request.session.get('mongo_password')
+    m_host = request.session.get('mongo_host')
+    
+    thread = threading.Thread(target=run_scan, args=(tipo_escaneo, m_user, m_pass, m_host))
     thread.daemon = True
     thread.start()
     
@@ -219,6 +270,32 @@ def get_devices(request):
     
     return JsonResponse({'error': 'No se pudo conectar al repositorio'}, status=500)
 
+def get_last_active_devices():
+    repo_historial = get_historial_repo()
+    if not repo_historial:
+        return []
+    
+    # Obtenemos los últimos registros únicos por MAC del historial
+    pipeline = [
+        {"$sort": {"fecha": -1}},
+        {
+            "$group": {
+                "_id": "$mac",
+                "latest": {"$first": "$$ROOT"}
+            }
+        },
+        {"$replaceRoot": {"newRoot": "$latest"}}
+    ]
+    
+    data = list(repo_historial.collection.aggregate(pipeline))
+    
+    for item in data:
+        item["_id"] = str(item["_id"])
+        if "tipo_dispositivo" not in item and "tipo" in item:
+            item["tipo_dispositivo"] = item["tipo"]
+            
+    return data
+
 @mongo_login_required
 def get_activos(request):
     set_mongo_session_data(
@@ -227,19 +304,13 @@ def get_activos(request):
         request.session.get('mongo_host')
     )
     
-    repo = get_activos_repo()
-    
-    if repo:
-        try:
-            data = repo.listar_todos()
-            for item in data:
-                item["_id"] = str(item["_id"])
-            
-            return JsonResponse(data, safe=False)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'error': 'No se pudo obtener los activos'}, status=500)
+    try:
+        data = get_last_active_devices()
+        print(f"Enviando {len(data)} dispositivos únicos a la topología")
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        print(f"Error al obtener activos: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
 
 @mongo_login_required
 def get_dashboard(request):
@@ -355,11 +426,11 @@ def ejecutar_query(request):
     
     try:
         import json
-        from services.query_builder_service import query_builder_service
+        from services.query_builder import query_builder_Service
 
         body = json.loads(request.body)
 
-        query = query_builder_service()
+        query = query_builder_Service()
 
         limite = int(body.get("limite", 100))
 
@@ -367,8 +438,12 @@ def ejecutar_query(request):
         orden = {}
 
         if orden_campo:
+            # Si el campo ya tiene el prefijo de la colección (p.ej. "historial.ip"), lo usamos tal cual
+            if "." not in orden_campo:
+                orden_campo = f"historial.{orden_campo}"
+            
             orden = {
-                "campo": f"historial.{orden_campo}",
+                "campo": orden_campo,
                 "direccion": "desc"
             }
 
@@ -377,10 +452,39 @@ def ejecutar_query(request):
         filtro = body.get("filtro")
 
         if filtro and filtro.get("campo") and filtro.get("valor"):
+            filtro_campo = filtro['campo']
+            if "." not in filtro_campo:
+                filtro_campo = f"historial.{filtro_campo}"
+
             filtros.append({
-                "campo": f"historial.{filtro['campo']}",
+                "campo": filtro_campo,
                 "operador": "contiene",
                 "valor": filtro["valor"]
+            })
+
+        fecha_desde = body.get("fecha_desde")
+        fecha_hasta = body.get("fecha_hasta")
+
+        if fecha_desde and fecha_hasta:
+            filtros.append({
+                "campo": "historial.fecha",
+                "operador": "entre",
+                "valor": {
+                    "desde": fecha_desde,
+                    "hasta": fecha_hasta
+                }
+            })
+        elif fecha_desde:
+            filtros.append({
+                "campo": "historial.fecha",
+                "operador": "mayor_que",
+                "valor": fecha_desde
+            })
+        elif fecha_hasta:
+            filtros.append({
+                "campo": "historial.fecha",
+                "operador": "menor_que",
+                "valor": fecha_hasta
             })
 
         consulta = query.crear_consulta(
@@ -397,6 +501,77 @@ def ejecutar_query(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+
+@mongo_login_required
+def get_stats(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
+    from datetime import datetime, timedelta
+    repo_historial = get_historial_repo()
+    
+    # 1. Escaneos últimos 3 días (agrupados por día)
+    stats_escaneos = []
+    hoy = datetime.now()
+    for i in range(2, -1, -1):
+        dia = hoy - timedelta(days=i)
+        inicio_dia = dia.replace(hour=0, minute=0, second=0, microsecond=0)
+        fin_dia = dia.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        # Contar registros en ese día
+        count = repo_historial.collection.count_documents({
+            "fecha": {"$gte": inicio_dia, "$lte": fin_dia}
+        })
+        stats_escaneos.append({
+            "dia": dia.strftime("%d/%m"),
+            "cantidad": count
+        })
+    
+    # 2. Niveles de riesgo (último estado de cada dispositivo)
+    repo_activos = get_activos_repo()
+    activos = repo_activos.listar_todos()
+    stats_riesgo = {"ALTO": 0, "MEDIO": 0, "BAJO": 0}
+    
+    for a in activos:
+        riesgo = str(a.get("riesgo", "BAJO")).upper()
+        if riesgo in stats_riesgo:
+            stats_riesgo[riesgo] += 1
+            
+    return JsonResponse({
+        "escaneos": stats_escaneos,
+        "riesgo": [
+            {"nivel": "ALTO", "cantidad": stats_riesgo["ALTO"]},
+            {"nivel": "MEDIO", "cantidad": stats_riesgo["MEDIO"]},
+            {"nivel": "BAJO", "cantidad": stats_riesgo["BAJO"]}
+        ]
+    })
+
+
+@mongo_login_required
+def alerts_page(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
+    repo = get_alertas_repo()
+    if not repo:
+        return render(request, "panel/alertas.html", {"alertas": [], "error": "No se pudo conectar al repositorio de alertas"})
+
+    alertas = repo.listar_todas()
+    
+    # Limpiar IDs y fechas para JSON/Template
+    for a in alertas:
+        a["_id"] = str(a["_id"])
+        if "fecha" in a:
+            a["fecha"] = a["fecha"].strftime("%Y-%m-%d %H:%M:%S")
+            
+    return render(request, "panel/alertas.html", {"alertas": alertas})
 
 
 def get_export_service():
@@ -528,18 +703,60 @@ def topologia_datos(request):
         request.session.get('mongo_password'),
         request.session.get('mongo_host')
     )   
+    
+    global scan_progress
+    
+    # Si ya hay un escaneo en curso, no iniciamos otro pero devolvemos los datos actuales
+    if scan_progress['status'] == 'running':
+        data = get_last_active_devices()
+        return JsonResponse({"status": "running", "data": data})
+
     try:
         from services.scanner_service import scanner_service
         from repositories.activos_repository import activos_repository
-        scanner = scanner_service()
-        scanner.escanar_y_guardar(
-            tipo_escaneo="rapido"
-        )
-        repo = activos_repository()
-        data = repo.listar_todos()
-        for item in data:
-            item["_id"] = str(item["_id"])
-        return JsonResponse(data, safe=False)
+        
+        # Iniciamos el escaneo rápido de forma asíncrona para no bloquear
+        scan_progress = {
+            'percentage': 0,
+            'status': 'running',
+            'message': 'Iniciando escaneo rápido para topología...'
+        }
+
+        def run_topo_scan(m_user, m_pass, m_host):
+            global scan_progress
+            try:
+                # Restaurar contexto de MongoDB en el nuevo hilo
+                set_mongo_session_data(m_user, m_pass, m_host)
+                
+                scanner = scanner_service()
+                
+                scan_progress['percentage'] = 10
+                scan_progress['message'] = 'Iniciando escaneo de red (Topología)...'
+                
+                # escanar_y_guardar ya hace el ping sweep optimizado
+                scanner.escanar_y_guardar(tipo_escaneo="rapido")
+                
+                scan_progress['percentage'] = 100
+                scan_progress['status'] = 'finished'
+                scan_progress['message'] = 'Escaneo de topología completado'
+            except Exception as e:
+                scan_progress['status'] = 'error'
+                scan_progress['message'] = str(e)
+                print(f"Topo scan error: {e}")
+                import traceback
+                traceback.print_exc()
+
+        m_user = request.session.get('mongo_user')
+        m_pass = request.session.get('mongo_password')
+        m_host = request.session.get('mongo_host')
+        
+        thread = threading.Thread(target=run_topo_scan, args=(m_user, m_pass, m_host))
+        thread.daemon = True
+        thread.start()
+
+        data = get_last_active_devices()
+            
+        return JsonResponse({"status": "started", "data": data})
     except Exception as e:
         import traceback
         traceback.print_exc()

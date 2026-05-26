@@ -55,5 +55,7 @@ urlpatterns = [
     path('export/excel/', views.export_excel, name='export_excel'),
     path('topologia/', views.topologia_page, name='topologia'),
     path('topologia-datos/', views.topologia_datos, name='topologia_datos'),
+    path('alertas/', views.alerts_page, name='alertas'),
+    path('get-stats/', views.get_stats, name='get_stats'),
     
-]
+ ]

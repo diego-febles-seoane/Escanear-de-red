@@ -51,6 +51,10 @@
                     <i class="fa-solid fa-sitemap"></i>
                     Topología
                 </a>
+                <a href="{% url 'alertas' %}" class="sidebar-link {% if request.resolver_match.url_name == 'alertas' %}active{% endif %}">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Alertas
+                </a>
             </div>
         </nav>
 
