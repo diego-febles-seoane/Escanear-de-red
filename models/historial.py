@@ -10,6 +10,7 @@ class Historial:
     @param rangos_ip: Rangos de direcciones IP en la red
     @param ubicacion: Ubicación de la red
     @param tipo_dispositivo: Tipo de dispositivo en la red
+    @param riesgo: Nivel de riesgo del dispositivo en la red
     @param fecha: Fecha de la entrada en el historial
     @param host_name: Nombre del host en la red
     @param ip: Dirección IP del host en la red
@@ -32,6 +33,7 @@ class Historial:
         puertos = None,   
         fabricante = None,
         tipo_dispositivo = None,
+        riesgo = None,
         nombre_dispositivo = None,
         ubicacion = None,
         fecha = None,
@@ -48,6 +50,7 @@ class Historial:
         self.puertos = puertos
         self.ubicacion = ubicacion
         self.tipo_dispositivo = tipo_dispositivo
+        self.riesgo = riesgo
         self.nombre_dispositivo = nombre_dispositivo
         self.fecha = fecha
         self.fabricante = fabricante
@@ -70,6 +73,7 @@ class Historial:
             "puertos": self.puertos,
             "fabricante": self.fabricante,
             "tipo_dispositivo": self.tipo_dispositivo,
+            "riesgo": self.riesgo,
             "nombre_dispositivo": self.nombre_dispositivo,
             "ubicacion": self.ubicacion,
             "fecha": self.fecha,

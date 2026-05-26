@@ -6,6 +6,8 @@ from services.device_classifier_service import device_classifier_service
 from repositories.activos_repository import activos_repository
 from repositories.logs_repository import logs_repository
 from services.alertas_service import alertas_service
+from services.risk_service import risk_service
+from services.comparador_service import comparador_service
 
 """
 Servicio de escaneo de red para obtener información de los dispositivos
@@ -23,6 +25,8 @@ class scanner_service:
         self.activos_repo = activos_repository()
         self.logs_repo = logs_repository()
         self.alertas = alertas_service()
+        self.risk = risk_service()
+        self.comparador = comparador_service()
 
     """
     Obtiene la ubicación de un dispositivo en base a su fabricante, tipo y IP
@@ -115,6 +119,14 @@ class scanner_service:
                 puertos = puertos,
                 host_name = dispositivo.get("host_name")
             )
+            # ---- RIESGO ----
+            riesgo = (
+                self.risk.calcular(
+                    fabricante,
+                    puertos,
+                    tipo
+                )
+            )
             # ---- NOMBRE DISPOSITIVO ----
             host = dispositivo.get("host_name")
             if host and host!= "Desconocido":
@@ -127,7 +139,6 @@ class scanner_service:
                 nombre_dispositivo = (
                     "Dispositivo desconocido"
                 )
-            
             # ---- VECES VISTO ----
             mac = dispositivo.get("mac")
             veces_visto = (
@@ -144,20 +155,33 @@ class scanner_service:
                     dispositivo
                 )
             # ---- PRIMER Y ULTIMO REGISTRO ----
-            mac = dispositivo.get("mac")
             fecha_actual = dispositivo.get("fecha")
+
             primer_registro = (
                 self.repo.buscar_primer_registro_por_mac(mac)
             )
+
             if primer_registro:
-                primera_vez = primer_registro.get(
-                    "primera_vez_conectado"
-                ) or primer_registro.get(
-                    "fecha"
+
+                primera_vez = (
+                    primer_registro.get("primera_vez")
+                    or primer_registro.get("primera_vez_conectado")
+                    or primer_registro.get("fecha")
                 )
+
             else:
                 primera_vez = fecha_actual
             ultima_vez = fecha_actual
+            # ---- COMPARAR CON ANTIMO REGISTRO ----
+            actual_para_comparar = {
+                "mac": mac,
+                "ip": dispositivo.get("ip"),
+                "riesgo": riesgo
+            }
+            self.comparador.comparar_con_anterior(
+                ultimo_registro,
+                actual_para_comparar
+            )
 
             historial = Historial (
                 ip = dispositivo.get("ip"),
@@ -170,6 +194,7 @@ class scanner_service:
                 puertos = puertos,
                 fabricante = fabricante,
                 tipo_dispositivo = tipo,
+                riesgo = riesgo,
                 nombre_dispositivo = nombre_dispositivo,
                 ubicacion = self.obtener_ubicacion(
                     ip = dispositivo.get("ip"),
