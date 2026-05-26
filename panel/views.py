@@ -1,18 +1,74 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.urls import reverse
 import threading
 import sys
 import os
+from functools import wraps
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def mongo_login_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.session.get('mongo_connected'):
+            return redirect('login')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
+
+def login_view(request):
+    if request.method == 'POST':
+        mongo_user = request.POST.get('mongo_user')
+        mongo_password = request.POST.get('mongo_password')
+        mongo_host = request.POST.get('mongo_host', 'redes.x6zgvks.mongodb.net')
+        
+        try:
+            from pymongo import MongoClient
+            from config.settings import DATABASE_NAME
+            
+            mongo_uri = f"mongodb+srv://{mongo_user}:{mongo_password}@{mongo_host}/?appName=Redes"
+            client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+            client.admin.command('ping')
+            
+            request.session['mongo_user'] = mongo_user
+            request.session['mongo_password'] = mongo_password
+            request.session['mongo_host'] = mongo_host
+            request.session['mongo_connected'] = True
+            
+            return redirect('index')
+        except Exception as e:
+            return render(request, 'panel/login.html', {'error': f'Error de conexión: {str(e)}'})
+    
+    return render(request, 'panel/login.html')
+
+
+def logout_view(request):
+    request.session.flush()
+    return redirect('login')
 
 scan_progress = {
     'percentage': 0,
     'status': 'idle',
     'message': ''
 }
+
+_mongo_session_data = {}
+
+def set_mongo_session_data(user, password, host):
+    global _mongo_session_data
+    _mongo_session_data = {
+        'user': user,
+        'password': password,
+        'host': host
+    }
+
+def get_mongo_session_data():
+    global _mongo_session_data
+    return _mongo_session_data
 
 def get_historial_repo():
     try:
@@ -46,7 +102,14 @@ def get_scanner_service():
         print(f"Error loading scanner service: {e}")
         return None
 
+@mongo_login_required
 def index(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
     historial = []
     repo = get_historial_repo()
     if repo:
@@ -60,9 +123,16 @@ def index(request):
         'progress': scan_progress
     })
 
+@mongo_login_required
 @csrf_exempt
 @require_POST
 def scan(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
     global scan_progress
     
     if scan_progress['status'] == 'running':
@@ -100,11 +170,19 @@ def scan(request):
     
     return JsonResponse({'status': 'started'})
 
+@mongo_login_required
 def get_progress(request):
     global scan_progress
     return JsonResponse(scan_progress)
 
+@mongo_login_required
 def export_data(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
     datos = []
     repo = get_historial_repo()
     if repo:
@@ -116,16 +194,22 @@ def export_data(request):
     return JsonResponse({'datos': datos, 'count': len(datos)})
 
 
+@mongo_login_required
 def get_devices(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
     
     repo = get_historial_repo()
     
     if repo:
         try:
-    
+
             data = repo.listar_todos_limpio()
             
-    
+
             print(f"\n[CMD] Enviando {len(data)} dispositivos a la vista JSON\n")
             
             return JsonResponse(data, safe=False)
@@ -135,7 +219,14 @@ def get_devices(request):
     
     return JsonResponse({'error': 'No se pudo conectar al repositorio'}, status=500)
 
+@mongo_login_required
 def get_activos(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
     repo = get_activos_repo()
     
     if repo:
@@ -150,7 +241,14 @@ def get_activos(request):
 
     return JsonResponse({'error': 'No se pudo obtener los activos'}, status=500)
 
+@mongo_login_required
 def get_dashboard(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
     repo = get_activos_repo()
 
     if repo:
@@ -163,7 +261,14 @@ def get_dashboard(request):
     
     return JsonResponse({'error': 'No se pudo obtener el dashboard'}, status=500)
 
+@mongo_login_required
 def get_logs(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
     repo = get_logs_repo()
 
     if repo:
@@ -180,12 +285,26 @@ def get_logs(request):
         
     return JsonResponse({'error': 'No se pudo cargar los logs'}, status=500)
 
+@mongo_login_required
 def query_page(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
     return render(
         request, "panel/query_builder.html"
     )
 
+@mongo_login_required
 def query_campos(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
     try:
         from services.query_builder import query_builder_Service
         query = query_builder_Service()
@@ -195,9 +314,16 @@ def query_campos(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+@mongo_login_required
 @csrf_exempt
 @require_POST
 def ejecutar_query(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
     try:
         import json
         from services.query_builder_service import query_builder_service
