@@ -1,45 +1,40 @@
 {% extends 'panel/base.html' %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12 d-flex justify-content-between align-items-center">
-        <h2>Inventario de Dispositivos</h2>
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h2 class="text-3xl font-bold mb-2">Inventario de Dispositivos</h2>
+        <p class="text-gray-400 text-sm">Dispositivos registrados en el inventario</p>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h5 class="card-title mb-0">MAC y Nombre del Dispositivo</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>MAC</th>
-                                <th>Nombre del Dispositivo</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inventario-tbody">
-                            {% for item in dispositivos %}
-                            <tr>
-                                <td>{{ item.mac }}</td>
-                                <td>{{ item.nombre_dispositivo|default:"-" }}</td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="2" class="text-center text-muted py-4">
-                                    No hay dispositivos en el inventario.
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+<div class="glass-card rounded-2xl overflow-hidden">
+    <div class="p-6 border-b border-white/10">
+        <h3 class="text-xl font-semibold">MAC y Nombre del Dispositivo</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-white/5 text-gray-400 text-xs uppercase">
+                <tr>
+                    <th class="p-5 text-left">MAC</th>
+                    <th class="p-5 text-left">Nombre del Dispositivo</th>
+                </tr>
+            </thead>
+            <tbody id="inventario-tbody">
+                {% for item in dispositivos %}
+                <tr class="table-row">
+                    <td class="p-5 font-medium">{{ item.mac }}</td>
+                    <td class="p-5">{{ item.nombre_dispositivo|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr class="table-row">
+                    <td class="p-5 text-center text-gray-500" colspan="2">
+                        No hay dispositivos en el inventario.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}

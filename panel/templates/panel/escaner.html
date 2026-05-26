@@ -1,156 +1,90 @@
 {% extends 'panel/base.html' %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12 d-flex justify-content-between align-items-center">
-        <h2>Dashboard de Dispositivos</h2>
-        <div id="scan-controls" class="d-flex gap-2">
-            <a href="{% url 'export_csv' %}" class="btn btn-success">
-                <i class="bi bi-filetype-csv"></i> Exportar CSV
-            </a>
-            <a href="{% url 'export_json' %}" class="btn btn-info text-white">
-                <i class="bi bi-filetype-json"></i> Exportar JSON
-            </a>
-            <a href="{% url 'export_excel' %}" class="btn btn-primary">
-                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
-            </a>
-            <button type="button" class="btn btn-laberit" id="scanBtn">
-                <i class="bi bi-search"></i> Iniciar Nuevo Escaneo
-            </button>
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h2 class="text-3xl font-bold mb-2">Dashboard de Dispositivos</h2>
+        <p class="text-gray-400 text-sm">Resultados del escaneo de red</p>
+    </div>
+    <div class="flex items-center gap-4">
+        <a href="{% url 'export_csv' %}" class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all">
+            <i class="fa-solid fa-file-csv text-green-400"></i>
+            Exportar CSV
+        </a>
+        <a href="{% url 'export_json' %}" class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all">
+            <i class="fa-solid fa-file-code text-blue-400"></i>
+            Exportar JSON
+        </a>
+        <a href="{% url 'export_excel' %}" class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all">
+            <i class="fa-solid fa-file-excel text-green-500"></i>
+            Exportar Excel
+        </a>
+        <button type="button" id="scanBtn" class="bg-gradient-to-r from-green-500 to-cyan-600 px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all">
+            <i class="fa-solid fa-search"></i> Iniciar Nuevo Escaneo
+        </button>
+    </div>
+</div>
+
+<!-- Barra de Progreso -->
+<div class="mb-8 d-none" id="progress-container">
+    <div class="glass-card rounded-2xl p-6">
+        <div class="flex justify-between mb-4">
+            <span class="font-semibold" id="progress-status">Escaneando red...</span>
+            <span class="font-bold" id="progress-percent">0%</span>
+        </div>
+        <div class="h-3 bg-white/10 rounded-full overflow-hidden">
+            <div id="main-progress-bar" class="h-full bg-gradient-to-r from-green-500 to-cyan-600 transition-all duration-300" style="width: 0%;"></div>
         </div>
     </div>
 </div>
 
-<!-- Barra de Progreso Laberit -->
-<div class="row mb-4 d-none" id="progress-container">
-    <div class="col-md-12">
-        <div class="card p-3">
-            <div class="d-flex justify-content-between mb-2">
-                <span class="fw-bold" id="progress-status">Escaneando red...</span>
-                <span class="fw-bold" id="progress-percent">0%</span>
-            </div>
-            <div class="progress" style="height: 10px; border-radius: 0;">
-                <div id="main-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
-                     role="progressbar" style="width: 0%; background-color: var(--laberit-red);"></div>
-            </div>
-        </div>
+<div class="glass-card rounded-2xl overflow-hidden">
+    <div class="p-6 border-b border-white/10">
+        <h3 class="text-xl font-semibold">Resultados del Historial</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-white/5 text-gray-400 text-xs uppercase">
+                <tr>
+                    <th class="p-5 text-left">Fecha</th>
+                    <th class="p-5 text-left">IP</th>
+                    <th class="p-5 text-left">MAC</th>
+                    <th class="p-5 text-left">Host Name</th>
+                    <th class="p-5 text-left">Fabricante</th>
+                    <th class="p-5 text-left">Estado</th>
+                </tr>
+            </thead>
+            <tbody id="historial-tbody">
+                {% for item in historial %}
+                <tr class="table-row">
+                    <td class="p-5">{{ item.fecha|default:"-" }}</td>
+                    <td class="p-5 font-medium">{{ item.ip }}</td>
+                    <td class="p-5">{{ item.mac }}</td>
+                    <td class="p-5">{{ item.host_name|default:"-" }}</td>
+                    <td class="p-5 text-gray-400">{{ item.fabricante|default:"Desconocido" }}</td>
+                    <td class="p-5">
+                        {% if item.estado == 'up' %}
+                        <span class="badge-green">Online</span>
+                        {% else %}
+                        <span class="badge-yellow">Offline</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr class="table-row">
+                    <td class="p-5 text-center text-gray-500" colspan="6">
+                        No hay registros disponibles. <br>
+                        Asegúrate de que MongoDB esté encendido y presiona "Iniciar Nuevo Escaneo".
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
-
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h5 class="card-title mb-0">Resultados del Historial</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Fecha</th>
-                                <th>IP</th>
-                                <th>MAC</th>
-                                <th>Host Name</th>
-                                <th>Fabricante</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historial-tbody">
-                            {% for item in historial %}
-                            <tr>
-                                <td>{{ item.fecha|default:"-" }}</td>
-                                <td>{{ item.ip }}</td>
-                                <td>{{ item.mac }}</td>
-                                <td>{{ item.host_name|default:"-" }}</td>
-                                <td>{{ item.fabricante|default:"Desconocido" }}</td>
-                                <td>
-                                    <span class="badge {% if item.estado == 'up' %}bg-success{% else %}bg-secondary{% endif %}">
-                                        {{ item.estado }}
-                                    </span>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-4">
-                                    No hay registros disponibles. <br>
-                                    Asegúrate de que MongoDB esté encendido y presiona "Iniciar Nuevo Escaneo".
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- 
-<script>
-    const scanBtn = document.getElementById('scanBtn');
-    const progressContainer = document.getElementById('progress-container');
-    const progressBar = document.getElementById('main-progress-bar');
-    const progressPercent = document.getElementById('progress-percent');
-    const progressStatus = document.getElementById('progress-status');
-
-    function updateProgress() {
-        fetch('{% url "get_progress" %}')
-            .then(response => response.json())
-            .then(data => {
-                const percentage = data.percentage;
-                progressBar.style.width = percentage + '%';
-                progressPercent.innerText = percentage + '%';
-
-                if (data.status === 'running') {
-                    setTimeout(updateProgress, 1000); // Poll every second
-                } else if (data.status === 'finished') {
-                    progressStatus.innerText = '¡Escaneo completado!';
-                    progressBar.classList.remove('progress-bar-animated');
-                    setTimeout(() => {
-                        window.location.reload(); // Reload to show results
-                    }, 1500);
-                } else if (data.status === 'error') {
-                    progressStatus.innerText = 'Error en el escaneo';
-                    progressBar.style.backgroundColor = 'gray';
-                }
-            });
-    }
-
-    scanBtn.addEventListener('click', function() {
-        // Mostrar barra de progreso
-        progressContainer.classList.remove('d-none');
-        scanBtn.disabled = true;
-        scanBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Preparando...';
-
-        // Iniciar escaneo vía AJAX
-        fetch('{% url "scan" %}', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'started' || data.status === 'already_running') {
-                updateProgress();
-            }
-        });
-    });
-
-    // Verificar si ya hay un escaneo corriendo al cargar la página
-    const currentStatus = "{{ progress.status|default:'idle' }}";
-    if (currentStatus === 'running') {
-        progressContainer.classList.remove('d-none');
-        scanBtn.disabled = true;
-        updateProgress();
-    }
-</script>
-
--->
 
 <script>
     const scanBtn = document.getElementById('scanBtn');
-    const fetchBtn = document.getElementById('fetchBtn');
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('main-progress-bar');
     const progressPercent = document.getElementById('progress-percent');
@@ -171,12 +105,10 @@
                     setTimeout(updateProgress, 1000);
                 } else if (data.status === 'finished') {
                     progressStatus.innerText = '¡Escaneo completado!';
-                    progressBar.classList.remove('progress-bar-animated');
-                    // Opcional: recargar datos automáticamente al terminar
                     fetchData(); 
                     setTimeout(() => progressContainer.classList.add('d-none'), 3000);
                     scanBtn.disabled = false;
-                    scanBtn.innerHTML = '<i class="bi bi-search"></i> Iniciar Nuevo Escaneo';
+                    scanBtn.innerHTML = '<i class="fa-solid fa-search"></i> Iniciar Nuevo Escaneo';
                 }
             });
     }
@@ -185,7 +117,7 @@
     scanBtn.addEventListener('click', function() {
         progressContainer.classList.remove('d-none');
         scanBtn.disabled = true;
-        scanBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Escaneando...';
+        scanBtn.innerHTML = '<span class="animate-spin mr-2"><i class="fa-solid fa-spinner"></i></span> Escaneando...';
 
         fetch('{% url "scan" %}', {
             method: 'POST',
@@ -205,28 +137,27 @@
                 tableBody.innerHTML = ''; // Limpiar tabla
                 
                 if (data.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No hay registros.</td></tr>';
+                    tableBody.innerHTML = '<tr class="table-row"><td class="p-5 text-center text-gray-500" colspan="6">No hay registros.</td></tr>';
                     return;
                 }
 
                 data.forEach(item => {
-                    const badgeClass = item.estado === 'up' ? 'bg-success' : 'bg-secondary';
+                    const estadoClass = item.estado === 'up' ? 'badge-green' : 'badge-yellow';
+                    const estadoText = item.estado === 'up' ? 'Online' : 'Offline';
                     tableBody.innerHTML += `
-                        <tr>
-                            <td>${item.fecha || '-'}</td>
-                            <td>${item.ip}</td>
-                            <td>${item.mac}</td>
-                            <td>${item.host_name || '-'}</td>
-                            <td>${item.fabricante || 'Desconocido'}</td>
-                            <td><span class="badge ${badgeClass}">${item.estado}</span></td>
+                        <tr class="table-row">
+                            <td class="p-5">${item.fecha || '-'}</td>
+                            <td class="p-5 font-medium">${item.ip}</td>
+                            <td class="p-5">${item.mac}</td>
+                            <td class="p-5">${item.host_name || '-'}</td>
+                            <td class="p-5 text-gray-400">${item.fabricante || 'Desconocido'}</td>
+                            <td class="p-5"><span class="${estadoClass}">${estadoText}</span></td>
                         </tr>
                     `;
                 });
                 console.log("Tabla actualizada con listar_todos_limpio");
             });
     }
-
-    fetchBtn.addEventListener('click', fetchData);
 </script>
 
 {% endblock %}

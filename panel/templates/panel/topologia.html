@@ -1,21 +1,22 @@
 {% extends 'panel/base.html' %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <h2>Topología de red</h2>
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h2 class="text-3xl font-bold mb-2">Topología de red</h2>
+        <p class="text-gray-400 text-sm">Visualización de dispositivos activos en la red</p>
     </div>
+    <button id="actualizarTopologia" class="bg-gradient-to-r from-green-500 to-cyan-600 px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all">
+        <i class="fa-solid fa-sync-alt"></i> Actualizar topología
+    </button>
 </div>
 
-<div class="card">
-    <div class="card-header">
-        <h5 class="card-title">Dispositivos activos</h5>
+<div class="glass-card rounded-2xl overflow-hidden">
+    <div class="p-6 border-b border-white/10">
+        <h3 class="text-xl font-semibold">Dispositivos activos</h3>
     </div>
-    <div class="card-body">
-        <button class="btn btn-laberit mb-3" id="actualizarTopologia">
-            Actualizar topología
-        </button>
-        <div id="network" style="height:650px; border:1px solid #ddd;"></div>
+    <div class="p-6">
+        <div id="network" style="height:650px; background: rgba(0,0,0,0.3); border-radius: 12px;"></div>
     </div>
 </div>
 
@@ -29,7 +30,12 @@ function dibujarTopologia(data) {
     nodes.push({
         id: "gateway",
         label: "Gateway / Router",
-        shape: "box"
+        shape: "box",
+        color: {
+            background: '#22c55e',
+            border: '#06b6d4'
+        },
+        font: { color: '#ffffff' }
     })
 
     data.forEach((device, index) => {
@@ -41,12 +47,18 @@ function dibujarTopologia(data) {
             title: "MAC: " + (device.mac || "-") + "<br>" +
                    "Fabricante: " + (device.fabricante || "-") + "<br>" +
                    "Tipo: " + (device.tipo_dispositivo || "-"),
-            shape: "dot"
+            shape: "dot",
+            color: {
+                background: '#06b6d4',
+                border: '#22c55e'
+            },
+            font: { color: '#ffffff' }
         })
 
         edges.push({
             from: "gateway",
-            to: nodeId
+            to: nodeId,
+            color: { color: '#4b5563' }
         })
     })
 
@@ -58,7 +70,14 @@ function dibujarTopologia(data) {
 
     let options = {
         physics: { enabled: true },
-        interaction: { hover: true }
+        interaction: { hover: true },
+        nodes: {
+            borderWidth: 2,
+            shadow: true
+        },
+        edges: {
+            width: 2
+        }
     }
 
     new vis.Network(container, networkData, options)
