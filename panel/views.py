@@ -511,3 +511,42 @@ def export_excel(request):
     os.unlink(tmp_path)
     
     return response
+
+@mongo_login_required
+def topologia_page(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )   
+    return render(request, "panel/topologia.html")
+
+@mongo_login_required
+def topologia_datos(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )   
+    try:
+        from services.scanner_service import scanner_service
+        from repositories.activos_repository import activos_repository
+        scanner = scanner_service()
+        scanner.escanar_y_guardar(
+            tipo_escaneo="rapido"
+        )
+        repo = activos_repository()
+        data = repo.listar_todos()
+        for item in data:
+            item["_id"] = str(item["_id"])
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+
+        return JsonResponse(
+            {
+                "error": str(e)
+            },
+            status=500
+        )

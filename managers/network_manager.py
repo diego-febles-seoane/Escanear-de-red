@@ -228,25 +228,29 @@ class network_manager:
         interfaces = psutil.net_if_addrs()
         for nombre, direcciones in interfaces.items():
             for direccion in direcciones:
-                if direccion.family == socket.AF_INET:
-                    ip = direccion.address
-                    mascara = direccion.netmask
-                    if ip.startswith("224."):
-                        continue
-
-                    if ip.startswith("239."):
-                        continue
-
-                    if ip == "255.255.255.255":
-                        continue
-
-                    if ip.endswith(".255"):
-                        continue
-                    red = ipaddress.IPv4Network(
-                        f"{ip}/{mascara}",
-                        strict=False
-                    )
-                    return str(red)
+                if direccion.family != socket.AF_INET:
+                    continue
+                ip = direccion.address
+                mascara = direccion.netmask
+                if not ip or not mascara:
+                    continue
+                if ip.startswith("127."):
+                    continue
+                if ip.startswith("169.254."):
+                    continue
+                if ip.startswith("224."):
+                    continue
+                if ip.startswith("239."):
+                    continue
+                if ip == "0.0.0.0":
+                    continue
+                if ip == "255.255.255.255":
+                    continue
+                red = ipaddress.IPv4Network(
+                    f"{ip}/{mascara}",
+                    strict=False
+                )
+                return str(red)
         return None
 
     """

@@ -179,7 +179,7 @@ class scanner_service:
                 "riesgo": riesgo
             }
             self.comparador.comparar_con_anterior(
-                ultimo_registro,
+                primer_registro,
                 actual_para_comparar
             )
 

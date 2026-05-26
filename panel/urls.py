@@ -5,12 +5,9 @@ urlpatterns = [
 
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-
     path('', views.index, name='index'),
     path('inventario/', views.inventario_page, name='inventario'),
-
     path('scan/', views.scan, name='scan'),
-
     path(
         'get-devices/',
         views.get_devices,
@@ -56,4 +53,7 @@ urlpatterns = [
     path('export/csv/', views.export_csv, name='export_csv'),
     path('export/json/', views.export_json, name='export_json'),
     path('export/excel/', views.export_excel, name='export_excel'),
+    path('topologia/', views.topologia_page, name='topologia'),
+    path('topologia-datos/', views.topologia_datos, name='topologia_datos'),
+    
 ]

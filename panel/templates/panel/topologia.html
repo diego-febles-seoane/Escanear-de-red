@@ -1,0 +1,83 @@
+{% extends 'panel/base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Topología de red</h2>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title">Dispositivos activos</h5>
+    </div>
+    <div class="card-body">
+        <button class="btn btn-laberit mb-3" id="actualizarTopologia">
+            Actualizar topología
+        </button>
+        <div id="network" style="height:650px; border:1px solid #ddd;"></div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+<script>
+function dibujarTopologia(data) {
+    const nodes = []
+    const edges = []
+
+    nodes.push({
+        id: "gateway",
+        label: "Gateway / Router",
+        shape: "box"
+    })
+
+    data.forEach((device, index) => {
+        let nodeId = device.mac || device.ip || index
+
+        nodes.push({
+            id: nodeId,
+            label: (device.nombre_dispositivo || "Dispositivo") + "\n" + (device.ip || "-") + "\n" + (device.riesgo || "SIN RIESGO"),
+            title: "MAC: " + (device.mac || "-") + "<br>" +
+                   "Fabricante: " + (device.fabricante || "-") + "<br>" +
+                   "Tipo: " + (device.tipo_dispositivo || "-"),
+            shape: "dot"
+        })
+
+        edges.push({
+            from: "gateway",
+            to: nodeId
+        })
+    })
+
+    let container = document.getElementById("network")
+    let networkData = {
+        nodes: new vis.DataSet(nodes),
+        edges: new vis.DataSet(edges)
+    }
+
+    let options = {
+        physics: { enabled: true },
+        interaction: { hover: true }
+    }
+
+    new vis.Network(container, networkData, options)
+}
+
+/* CARGA INICIAL */
+fetch("{% url 'get_activos' %}")
+    .then(r => r.json())
+    .then(data => {
+        dibujarTopologia(data)
+    })
+
+/* BOTON ACTUALIZAR */
+document.getElementById("actualizarTopologia").addEventListener("click", function() {
+    fetch("{% url 'topologia_datos' %}")
+        .then(r => r.json())
+        .then(data => {
+            dibujarTopologia(data)
+        })
+})
+</script>
+{% endblock %}
