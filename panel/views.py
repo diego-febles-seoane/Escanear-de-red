@@ -297,6 +297,35 @@ def query_page(request):
         request, "panel/query_builder.html"
     )
 
+
+@mongo_login_required
+def inventario_page(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
+    repo = get_historial_repo()
+    dispositivos = []
+    
+    if repo:
+        try:
+            todos = repo.listar_todos_limpio()
+            macs_vistas = set()
+            for item in todos:
+                mac = item.get('mac')
+                if mac and mac not in macs_vistas:
+                    macs_vistas.add(mac)
+                    dispositivos.append({
+                        'mac': mac,
+                        'nombre_dispositivo': item.get('nombre_dispositivo', item.get('host_name', '-'))
+                    })
+        except Exception as e:
+            print(f"Error loading inventory: {e}")
+    
+    return render(request, 'panel/inventario.html', {'dispositivos': dispositivos})
+
 @mongo_login_required
 def query_campos(request):
     set_mongo_session_data(
@@ -368,3 +397,117 @@ def ejecutar_query(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+
+def get_export_service():
+    try:
+        from services.export_service import export_service
+        return export_service()
+    except Exception as e:
+        print(f"Error loading export service: {e}")
+        return None
+
+
+@mongo_login_required
+def export_csv(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
+    from django.http import HttpResponse
+    from datetime import datetime
+    import csv
+    
+    repo = get_historial_repo()
+    if not repo:
+        return JsonResponse({'error': 'No se pudo conectar al repositorio'}, status=500)
+    
+    datos = repo.listar_todos_limpio()
+    
+    filename = f"historial_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    
+    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    if datos:
+        columnas = ['fecha', 'ip', 'mac', 'host_name', 'fabricante', 'estado', 'nombre_dispositivo']
+        writer = csv.DictWriter(response, fieldnames=columnas, extrasaction='ignore')
+        writer.writeheader()
+        
+        for item in datos:
+            row = {col: item.get(col, '') for col in columnas}
+            writer.writerow(row)
+    
+    return response
+
+
+@mongo_login_required
+def export_json(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
+    from django.http import HttpResponse
+    from datetime import datetime
+    import json
+    
+    repo = get_historial_repo()
+    if not repo:
+        return JsonResponse({'error': 'No se pudo conectar al repositorio'}, status=500)
+    
+    datos = repo.listar_todos_limpio()
+    
+    filename = f"historial_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    
+    response = HttpResponse(content_type='application/json')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    json.dump(datos, response, indent=4, ensure_ascii=False, default=str)
+    
+    return response
+
+
+@mongo_login_required
+def export_excel(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
+    from django.http import HttpResponse
+    from datetime import datetime
+    import tempfile
+    import os
+    
+    repo = get_historial_repo()
+    if not repo:
+        return JsonResponse({'error': 'No se pudo conectar al repositorio'}, status=500)
+    
+    datos = repo.listar_todos_limpio()
+    
+    export_svc = get_export_service()
+    if not export_svc:
+        return JsonResponse({'error': 'No se pudo inicializar el servicio de exportación'}, status=500)
+    
+    filename = f"historial_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
+        tmp_path = tmp.name
+    
+    export_svc.exportar_excel(datos, tmp_path)
+    
+    with open(tmp_path, 'rb') as f:
+        response = HttpResponse(
+            f.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    os.unlink(tmp_path)
+    
+    return response

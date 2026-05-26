@@ -7,6 +7,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
 
     path('', views.index, name='index'),
+    path('inventario/', views.inventario_page, name='inventario'),
 
     path('scan/', views.scan, name='scan'),
 
@@ -51,4 +52,8 @@ urlpatterns = [
         views.ejecutar_query,
         name='ejecutar_query'
     ),
+    
+    path('export/csv/', views.export_csv, name='export_csv'),
+    path('export/json/', views.export_json, name='export_json'),
+    path('export/excel/', views.export_excel, name='export_excel'),
 ]
