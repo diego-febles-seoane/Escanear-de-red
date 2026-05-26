@@ -5,6 +5,7 @@ from services.vendor_service import vendor_service
 from services.device_classifier_service import device_classifier_service
 from repositories.activos_repository import activos_repository
 from repositories.logs_repository import logs_repository
+from services.alertas_service import alertas_service
 
 """
 Servicio de escaneo de red para obtener información de los dispositivos
@@ -21,6 +22,7 @@ class scanner_service:
         self.classifier = device_classifier_service()
         self.activos_repo = activos_repository()
         self.logs_repo = logs_repository()
+        self.alertas = alertas_service()
 
     """
     Obtiene la ubicación de un dispositivo en base a su fabricante, tipo y IP
@@ -56,7 +58,7 @@ class scanner_service:
     Escanea la red para obtener información de los dispositivos
     y los guarda en la base de datos Historial
     """
-    def escanar_y_guardar(self):
+    def escanar_y_guardar(self, tipo_escaneo="normal"):
         rango = self.network.obtener_rango_ip()
         print ("Rango detectado:", rango)
 
@@ -78,29 +80,35 @@ class scanner_service:
         Procesa cada dispositivo en la lista de dispositivos
         para obtener información de fabricante y guardarla en Historial
         """
-        puertos_por_ip = self.network.obtener_puertos_por_agrupados_por_ip()
-
-
         for dispositivo in dispositivos:
-
-
+            
             # ---- FABRICANTE ----
             fabricante = self.vendor.obtener_fabricante(dispositivo.get("mac"))
+            # ---- COMPROBAR FABRICANTE ----
+            self.alertas.comprobar_fabricante(
+                {
+                    "mac": dispositivo.get("mac"),
+                    "ip": dispositivo.get("ip"),
+                    "fabricante": fabricante
+                }
+            )
             # ---- PUERTOS ----
-            puertos = (
-                    puertos_por_ip.get(
-                        dispositivo.get("ip"),
-                        []
-                    )
-                    or [
-                        {
-                            "puerto": "Puertos desconocidos o inaccesibles",
-                            "servicio": "Sin tráfico observado",
-                            "estado": "Inactivo",
-                            "pid": "Sin PID asignado"
-                        }
-                    ]
-                ),
+            ip = dispositivo.get("ip")
+            if tipo_escaneo == "rapido":
+                puertos = (
+                    self.network
+                    .obtener_puertos_rapido(ip)
+                )
+            elif tipo_escaneo == "completo":
+                puertos = (
+                    self.network
+                    .obtener_puertos_completo(ip)
+                )
+            else:
+                puertos = (
+                    self.network
+                    .obtener_puertos_normal(ip)
+                )
             # ---- TIPO DISPOSITIVO ----
             tipo = self.classifier.clasificar(
                 fabricante = fabricante,
@@ -119,14 +127,22 @@ class scanner_service:
                 nombre_dispositivo = (
                     "Dispositivo desconocido"
                 )
+            
             # ---- VECES VISTO ----
             mac = dispositivo.get("mac")
             veces_visto = (
                 self.repo.contar_por_mac(mac)
-                +1
+                + 1
             )
+            # ---- COMPROBAR DISPOSITIVO NUEVO ----
             if veces_visto == 1:
-                    self.logs_repo.log_dispositivo_nuevo(mac, dispositivo.get("ip"))
+                self.logs_repo.log_dispositivo_nuevo(
+                    mac,
+                    dispositivo.get("ip")
+                )
+                self.alertas.comprobar_dispositivo_nuevo(
+                    dispositivo
+                )
             # ---- PRIMER Y ULTIMO REGISTRO ----
             mac = dispositivo.get("mac")
             fecha_actual = dispositivo.get("fecha")
@@ -191,6 +207,3 @@ class scanner_service:
 
         print("No se encontraron dispositivos")
         return None
-
-
-

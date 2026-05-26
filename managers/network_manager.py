@@ -226,19 +226,270 @@ class network_manager:
     """
     def obtener_rango_ip(self):
         interfaces = psutil.net_if_addrs()
-
         for nombre, direcciones in interfaces.items():
             for direccion in direcciones:
                 if direccion.family == socket.AF_INET:
                     ip = direccion.address
+                    mascara = direccion.netmask
+                    if ip.startswith("224."):
+                        continue
 
-                    mascarara = direccion.netmask
+                    if ip.startswith("239."):
+                        continue
 
-                    red = ipaddress.IPv4Network(f"{ip}/{mascarara}", strict=False)
+                    if ip == "255.255.255.255":
+                        continue
 
-
+                    if ip.endswith(".255"):
+                        continue
+                    red = ipaddress.IPv4Network(
+                        f"{ip}/{mascara}",
+                        strict=False
+                    )
                     return str(red)
         return None
+
+    """
+    Metodo para obtener el servicio de un puerto
+    @param puerto: Puerto a buscar
+    @return: Nombre del servicio o "Desconocido" si no se encuentra
+    """
+    def obtener_servicio_puerto(self, puerto, protocolo="tcp"):
+        try:
+            return socket.getservbyport(puerto, protocolo)
+        except:
+            return "Desconocido"
+
+    """
+    Metodo para obtener el prefijo de la red local
+    @return: Prefijo de la red local como cadena de texto
+    """
+    def obtener_prefijo_red_local(self):
+        rango = self.obtener_rango_ip()
+
+        if not rango:
+            return None
+
+        red = ipaddress.IPv4Network(
+            rango,
+            strict=False
+        )
+        return red
+    
+    # ---- ESCANEO DE PUERTOS ----
+    """
+    Metodo para obtener los puertos abiertos en un rango de puertos
+    @param ip: Dirección IP a escanear
+    @param inicio: Puerto de inicio del rango
+    @param fin: Puerto de fin del rango
+    @return: Lista de diccionarios con información de los puertos abiertos
+    """
+    def obtener_puertos_abiertos_rango(self, ip, inicio, fin):
+        puertos_abiertos = []
+
+        for puerto in range(inicio, fin + 1):
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(0.2)
+
+            resultado = sock.connect_ex((ip, puerto))
+
+            if resultado == 0:
+                puertos_abiertos.append({
+                    "puerto": puerto,
+                    "servicio": self.obtener_servicio_puerto(puerto),
+                    "estado": "ABIERTO",
+                    "pid": "-"
+                })
+
+            sock.close()
+
+        if not puertos_abiertos:
+            return [
+                {
+                    "puerto": "No detectado",
+                    "servicio": "Sin puertos abiertos en el rango",
+                    "estado": "Desconocido",
+                    "pid": "-"
+                }
+            ]
+
+        return puertos_abiertos
+    
+    """
+    Metodo para obtener los puertos abiertos en el rango 1-1024
+    @param ip: Dirección IP a escanear
+    @return: Lista de diccionarios con información de los puertos abiertos
+    """
+    def obtener_puertos_rapido(self, ip):
+        puertos_importantes = [
+            21, 22, 23, 53, 80, 135, 139,
+            443, 445, 3389, 5900, 8080, 9100
+        ]
+        return self.obtener_puertos_lista(
+            ip,
+            puertos_importantes
+        )
+
+    """
+    Metodo para obtener los puertos abiertos en el rango 1-5000
+    @param ip: Dirección IP a escanear
+    @return: Lista de diccionarios con información de los puertos abiertos
+    """
+    def obtener_puertos_normal(self, ip):
+        return self.obtener_puertos_abiertos_rango(
+            ip,
+            1,
+            5000
+        )
+
+    """
+    Metodo para obtener los puertos abiertos en el rango 1-65535
+    @param ip: Dirección IP a escanear
+    @return: Lista de diccionarios con información de los puertos abiertos
+    """
+    def obtener_puertos_completo(self, ip):
+        return self.obtener_puertos_abiertos_rango(
+            ip,
+            1,
+            65535
+        )
+    """
+    Metodo para obtener los puertos abiertos en una lista de puertos
+    @param ip: Dirección IP a escanear
+    @param lista_puertos: Lista de puertos a escanear
+    @return: Lista de diccionarios con información de los puertos abiertos
+    """
+    def obtener_puertos_lista(self, ip, lista_puertos):
+        puertos_abiertos = []
+
+        for puerto in lista_puertos:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(0.05)
+
+            resultado = sock.connect_ex((ip, puerto))
+
+            if resultado == 0:
+                puertos_abiertos.append({
+                    "puerto": puerto,
+                    "servicio": self.obtener_servicio_puerto(puerto),
+                    "estado": "ABIERTO",
+                    "pid": "-"
+                })
+
+            sock.close()
+
+        if not puertos_abiertos:
+            return [
+                {
+                    "puerto": "No detectado",
+                    "servicio": "Sin puertos abiertos detectados",
+                    "estado": "Desconocido",
+                    "pid": "-"
+                }
+            ]
+
+        return puertos_abiertos
+    # ---- FINAL DE ESCANEOS DE LOS PUERTOS ----
+
+    # ---- DE MOMENTO NO SE USA ----
+    """
+    Metodo para obtener los puertos en la red local
+    @return: Diccionario con los puertos en la red local
+    """
+    def obtener_puertos_red_local(self):
+        puertos = self.obtener_puertos_por_agrupados_por_ip()
+        red_local = self.obtener_prefijo_red_local()
+        resultado = {}
+        if not red_local:
+            return resultado
+        for ip,lista_puertos in puertos.items():
+            try:
+                ip_obj = ipaddress.IPv4Address(ip)
+            except:
+                continue
+
+            if ip_obj in red_local:
+                resultado[ip] = lista_puertos
+
+        return resultado
+    # ---- DE MOMENTO NO SE USA ----
+    """
+    Metodo para obtener los puertos en uso
+    @return: Lista de diccionarios con información de los puertos en uso
+    """
+    def obtener_puertos_en_uso(self):
+        conexiones = psutil.net_connections(kind="inet")
+        puertos = []
+
+        for conexion in conexiones:
+            if not conexion.laddr:
+                continue
+            local_ip = conexion.laddr.ip
+            local_puerto = conexion.laddr.port
+
+            remote_ip = None
+            remote_puerto = None
+
+            if conexion.raddr:
+                remote_ip = conexion.raddr.ip
+                remote_puerto = conexion.raddr.port
+
+            puertos.append({
+                "local_ip": local_ip,
+                "local_puerto": local_puerto,
+                "remote_ip": remote_ip,
+                "remote_puerto": remote_puerto,
+                "estado": conexion.status,
+                "pid": conexion.pid,
+                "servicio_local": self.obtener_servicio_puerto(local_puerto)
+            })
+        return puertos
+    # ---- DE MOMENTO NO SE USA ----
+    """
+    Metodo para obtener los puertos por agrupados por IP
+    @return: Diccionario con los puertos agrupados por IP
+    """
+    def obtener_puertos_por_agrupados_por_ip(self):
+        conexiones = self.obtener_puertos_en_uso()
+        agrupados = {}
+
+        for conexion in conexiones:
+            pares = [
+                {
+                    "ip": conexion.get("local_ip"),
+                    "puerto": conexion.get("local_puerto"),
+                }
+                ,
+                {
+                    "ip": conexion.get("remote_ip"),
+                    "puerto": conexion.get("remote_puerto"),
+                }
+            ]
+            for par in pares:
+                ip = par["ip"]
+                puerto = par["puerto"]
+
+                if not ip or not puerto:
+                    continue
+                if ip not in agrupados:
+                    agrupados[ip] = []
+
+                registro = {
+                    "puerto": puerto,
+                    "servicio": self.obtener_servicio_puerto(puerto),
+                    "estado": conexion.get("estado"),
+                    "pid": conexion.get("pid"),
+                }
+
+                if registro not in agrupados[ip]:
+                    agrupados[ip].append(registro)
+
+        for ip in agrupados:
+            agrupados[ip] = sorted(
+                agrupados[ip],
+                key = lambda x: x["puerto"],
+            )
+        return agrupados
 
     # ---- INFORMACION DEL GATEWAY ----
     """
@@ -296,79 +547,3 @@ class network_manager:
         return (
             "Red desconocida"
         )
-
-    def obtener_servicio_puerto(self, puerto, protocolo="tcp"):
-        try:
-            return socket.getservbyport(puerto, protocolo)
-        except:
-            return "Desconocido"
-    
-    def obtener_puertos_en_uso(self):
-        conexiones = psutil.net_connections(kind="inet")
-        puertos = []
-
-        for conexion in conexiones:
-            if not conexion.laddr:
-                continue
-            local_ip = conexion.laddr.ip
-            local_puerto = conexion.laddr.port
-
-            remote_ip = None
-            remote_puerto = None
-
-            if conexion.raddr:
-                remote_ip = conexion.raddr.ip
-                remote_puerto = conexion.raddr.port
-
-            puertos.append({
-                "local_ip": local_ip,
-                "local_puerto": local_puerto,
-                "remote_ip": remote_ip,
-                "remote_puerto": remote_puerto,
-                "estado": conexion.status,
-                "pid": conexion.pid,
-                "servicio_local": self.obtener_servicio_puerto(local_puerto)
-            })
-        return puertos
-    
-    def obtener_puertos_por_agrupados_por_ip(self):
-        conexiones = self.obtener_puertos_en_uso()
-        agrupados = {}
-
-        for conexion in conexiones:
-            pares = [
-                {
-                    "ip": conexion.get("local_ip"),
-                    "puerto": conexion.get("local_puerto"),
-                }
-                ,
-                {
-                    "ip": conexion.get("remote_ip"),
-                    "puerto": conexion.get("remote_puerto"),
-                }
-            ]
-            for par in pares:
-                ip = par["ip"]
-                puerto = par["puerto"]
-
-                if not ip or not puerto:
-                    continue
-                if ip not in agrupados:
-                    agrupados[ip] = []
-
-                registro = {
-                    "puerto": puerto,
-                    "servicio": self.obtener_servicio_puerto(puerto),
-                    "estado": conexion.get("estado"),
-                    "pid": conexion.get("pid"),
-                }
-
-                if registro not in agrupados[ip]:
-                    agrupados[ip].append(registro)
-
-        for ip in agrupados:
-            agrupados[ip] = sorted(
-                agrupados[ip],
-                key = lambda x: x["puerto"],
-            )
-        return agrupados

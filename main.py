@@ -1,11 +1,7 @@
-from services.export_service import export_service
+from services.scanner_service import scanner_service
 
-exportador = export_service()
+scanner = scanner_service()
 
-datos = exportador.obtener_coleccion_completa(
-    "historial",
-    limite=1000
+scanner.escanar_y_guardar(
+    "normal"
 )
-exportador.exportar_excel(datos, "resultado.xlsx")
-
-print("Exportación completada")
