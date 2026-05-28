@@ -144,7 +144,15 @@
             return;
         }
 
-        document.getElementById("resultado").innerHTML = "<p class='text-cyan-400 text-center animate-pulse'>Ejecutando consulta...</p>";
+        const resultadoDiv = document.getElementById("resultado");
+        resultadoDiv.innerHTML = `
+            <div class="flex flex-col items-center justify-center p-12 space-y-4">
+                <div class="animate-spin text-cyan-400 text-4xl"><i class="fa-solid fa-circle-notch"></i></div>
+                <p class='text-cyan-400 font-medium'>Ejecutando consulta personalizada...</p>
+            </div>
+        `;
+        resultadoDiv.classList.add('bg-black/30');
+        resultadoDiv.classList.remove('p-0');
 
         fetch('{% url "ejecutar_query" %}', {
             method: "POST",
@@ -165,18 +173,55 @@
             })
         })
             .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    document.getElementById("resultado").innerHTML =
-                        "<p class='text-red-400'>Error: " + data.error + "</p>";
-                } else if (data.length === 0) {
-                    document.getElementById("resultado").innerHTML =
-                        "<p class='text-gray-400 text-center'>No se encontraron resultados.</p>";
-                } else {
-                    document.getElementById("resultado").innerHTML =
-                        "<pre class='text-green-400 text-sm'>" + JSON.stringify(data, null, 2) + "</pre>";
-                }
-            })
+        .then(data => {
+            const resultadoDiv = document.getElementById("resultado");
+            if (data.error) {
+                resultadoDiv.innerHTML = `<p class='text-red-400 p-4'>Error: ${data.error}</p>`;
+            } else if (!data || data.length === 0) {
+                resultadoDiv.innerHTML = `<p class='text-gray-400 text-center p-4 italic'>No se encontraron resultados.</p>`;
+            } else {
+                // Crear tabla dinámica con el diseño del dashboard
+                let html = `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-white/5 text-gray-400 uppercase text-xs">
+                                <tr>
+                                    ${Object.keys(data[0]).map(key => `<th class="p-4 text-left">${key.replace('historial.', '').replace('_', ' ').toUpperCase()}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-white/5">
+                                ${data.map(row => `
+                                    <tr class="table-row hover:bg-white/5 transition-colors">
+                                        ${Object.values(row).map(value => {
+                                            let content = value || '-';
+                                            let extraClass = '';
+                                            
+                                            // Formatear riesgos
+                                            if (typeof content === 'string' && ['ALTO', 'MEDIO', 'BAJO'].includes(content.toUpperCase())) {
+                                                if (content.toUpperCase() === 'ALTO') extraClass = 'text-red-500 font-bold';
+                                                else if (content.toUpperCase() === 'MEDIO') extraClass = 'text-amber-500 font-bold';
+                                                else if (content.toUpperCase() === 'BAJO') extraClass = 'text-green-500 font-bold';
+                                            }
+
+                                            // Formatear puertos si es un array
+                                            if (Array.isArray(content)) {
+                                                content = content.map(p => p.puerto).join(', ') || 'Ninguno';
+                                                extraClass = 'text-cyan-400 font-mono text-xs';
+                                            }
+
+                                            return `<td class="p-4 ${extraClass}">${content}</td>`;
+                                        }).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                resultadoDiv.innerHTML = html;
+                resultadoDiv.classList.remove('bg-black/30');
+                resultadoDiv.classList.add('p-0');
+            }
+        })
             .catch(err => {
                 document.getElementById("resultado").innerHTML =
                     "<p class='text-red-400'>Error de conexión: " + err.message + "</p>";

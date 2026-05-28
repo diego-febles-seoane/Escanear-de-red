@@ -12,25 +12,59 @@
     </button>
 </div>
 
-<div class="glass-card rounded-2xl overflow-hidden">
-    <div class="p-6 border-b border-white/10 flex justify-between items-center">
-        <h3 class="text-xl font-semibold">Mapa de Red</h3>
-        <span class="text-xs text-gray-500 italic">Haz clic en un dispositivo para expandir su información</span>
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <!-- Mapa de Red -->
+    <div class="lg:col-span-3 glass-card rounded-2xl overflow-hidden">
+        <div class="p-6 border-b border-white/10 flex justify-between items-center">
+            <h3 class="text-xl font-semibold text-cyan-400">Mapa de Red</h3>
+            <span class="text-xs text-gray-500 italic">Haz clic en un dispositivo para expandir su información</span>
+        </div>
+        <div class="p-6 relative">
+            <div id="network" style="height:700px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);"></div>
+            
+            <!-- Overlay de carga -->
+            <div id="loadingOverlay" class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-12 z-[9999]" style="display: none;">
+                <div class="text-center bg-gray-900/90 p-10 rounded-2xl border border-white/10 shadow-2xl relative">
+                    <!-- Botón de cierre manual (emergencia) -->
+                    <button type="button" id="closeOverlayBtn" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors cursor-pointer p-2">
+                        <i class="fa-solid fa-times text-xl"></i>
+                    </button>
+                    
+                    <div class="animate-spin text-cyan-400 text-5xl mb-6"><i class="fa-solid fa-circle-notch"></i></div>
+                    <p class="text-white font-bold text-xl mb-2" id="loadingText">Analizando red...</p>
+                    <p class="text-gray-400 text-sm">Actualizando mapa de dispositivos</p>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="p-6 relative">
-        <div id="network" style="height:700px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);"></div>
-        
-        <!-- Overlay de carga -->
-        <div id="loadingOverlay" class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-12 z-[9999]" style="display: none;">
-            <div class="text-center bg-gray-900/90 p-10 rounded-2xl border border-white/10 shadow-2xl relative">
-                <!-- Botón de cierre manual (emergencia) -->
-                <button type="button" id="closeOverlayBtn" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors cursor-pointer p-2">
-                    <i class="fa-solid fa-times text-xl"></i>
-                </button>
-                
-                <div class="animate-spin text-cyan-400 text-5xl mb-6"><i class="fa-solid fa-circle-notch"></i></div>
-                <p class="text-white font-bold text-xl mb-2" id="loadingText">Analizando red...</p>
-                <p class="text-gray-400 text-sm">Actualizando mapa de dispositivos</p>
+
+    <!-- Gráficos de Dispositivos -->
+    <div class="lg:col-span-1 space-y-6">
+        <div class="glass-card rounded-2xl p-6 border border-white/10">
+            <h3 class="text-xl font-semibold mb-6 text-cyan-400 text-center">Tipos de Dispositivos</h3>
+            <div class="relative" style="height: 250px;">
+                <canvas id="deviceTypeChart"></canvas>
+            </div>
+            <div id="chartLegend" class="mt-6 space-y-2">
+                <!-- Leyenda dinámica -->
+            </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6 border border-white/10">
+            <h3 class="text-xl font-semibold mb-6 text-cyan-400 text-center">Puertos más Comunes</h3>
+            <div class="relative" style="height: 250px;">
+                <canvas id="portsChart"></canvas>
+            </div>
+            <div id="portsLegend" class="mt-6 space-y-2">
+                <!-- Leyenda dinámica puertos -->
+            </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6 border border-white/10">
+            <h3 class="text-xl font-semibold mb-4 text-cyan-400 text-center">Resumen de Activos</h3>
+            <div class="text-center">
+                <p class="text-4xl font-bold text-white" id="totalDevices">0</p>
+                <p class="text-gray-400 text-sm">Dispositivos detectados</p>
             </div>
         </div>
     </div>
@@ -42,6 +76,138 @@
 let network = null;
 let nodes = new vis.DataSet();
 let edges = new vis.DataSet();
+let deviceChart = null;
+let portsChart = null;
+
+function actualizarGrafico(data) {
+    const ctx = document.getElementById('deviceTypeChart').getContext('2d');
+    const ctxPorts = document.getElementById('portsChart').getContext('2d');
+    const totalElement = document.getElementById('totalDevices');
+    
+    // 1. Procesar Tipos de Dispositivos
+    const typeCounts = {};
+    const portCounts = {};
+    let totalPortsDetected = 0;
+
+    data.forEach(d => {
+        // Tipos
+        const type = d.tipo_dispositivo || d.tipo || 'Desconocido';
+        typeCounts[type] = (typeCounts[type] || 0) + 1;
+
+        // Puertos
+        if (d.puertos && Array.isArray(d.puertos)) {
+            d.puertos.forEach(p => {
+                if (p.puerto && p.puerto !== 'No detectado') {
+                    const portKey = `Port ${p.puerto} (${p.servicio || '?'})`;
+                    portCounts[portKey] = (portCounts[portKey] || 0) + 1;
+                    totalPortsDetected++;
+                }
+            });
+        }
+    });
+
+    totalElement.innerText = data.length;
+
+    // Colores base
+    const colors = ['#06b6d4', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f97316'];
+
+    // --- GRÁFICO 1: TIPOS ---
+    const typeLabels = Object.keys(typeCounts);
+    const typeValues = Object.values(typeCounts);
+
+    if (deviceChart) {
+        deviceChart.data.labels = typeLabels;
+        deviceChart.data.datasets[0].data = typeValues;
+        deviceChart.update();
+    } else {
+        deviceChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: typeLabels,
+                datasets: [{
+                    data: typeValues,
+                    backgroundColor: colors.slice(0, typeLabels.length),
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(17, 24, 39, 0.9)' } },
+                cutout: '70%'
+            }
+        });
+    }
+
+    // Leyenda Tipos
+    const legendContainer = document.getElementById('chartLegend');
+    legendContainer.innerHTML = '';
+    typeLabels.forEach((label, i) => {
+        const value = typeValues[i];
+        const percent = Math.round((value / data.length) * 100);
+        legendContainer.innerHTML += `
+            <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full" style="background-color: ${colors[i % colors.length]}"></div>
+                    <span class="text-gray-400">${label}</span>
+                </div>
+                <span class="font-semibold text-white">${percent}%</span>
+            </div>`;
+    });
+
+    // --- GRÁFICO 2: PUERTOS ---
+    // Obtener top 5 puertos
+    const sortedPorts = Object.entries(portCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+    
+    const portLabels = sortedPorts.map(p => p[0]);
+    const portValues = sortedPorts.map(p => p[1]);
+
+    if (portsChart) {
+        portsChart.data.labels = portLabels;
+        portsChart.data.datasets[0].data = portValues;
+        portsChart.update();
+    } else {
+        portsChart = new Chart(ctxPorts, {
+            type: 'pie',
+            data: {
+                labels: portLabels,
+                datasets: [{
+                    data: portValues,
+                    backgroundColor: colors.slice(2, 2 + portLabels.length), // Usar colores diferentes
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(17, 24, 39, 0.9)' } }
+            }
+        });
+    }
+
+    // Leyenda Puertos
+    const portsLegend = document.getElementById('portsLegend');
+    portsLegend.innerHTML = '';
+    if (portLabels.length === 0) {
+        portsLegend.innerHTML = '<p class="text-center text-gray-500 text-xs italic">No se detectaron puertos abiertos</p>';
+    } else {
+        portLabels.forEach((label, i) => {
+            const value = portValues[i];
+            const percent = totalPortsDetected > 0 ? Math.round((value / totalPortsDetected) * 100) : 0;
+            portsLegend.innerHTML += `
+                <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full" style="background-color: ${colors[(i+2) % colors.length]}"></div>
+                        <span class="text-gray-400">${label}</span>
+                    </div>
+                    <span class="font-semibold text-white">${value} det.</span>
+                </div>`;
+        });
+    }
+}
 
 function getLabel(device, expanded = false) {
     const nombre = device.nombre_dispositivo || "Dispositivo";
@@ -67,6 +233,7 @@ function getLabel(device, expanded = false) {
 }
 
 function dibujarTopologia(data) {
+    actualizarGrafico(data);
     nodes.clear();
     edges.clear();
 
@@ -242,11 +409,14 @@ function setLoading(isLoading) {
         icon.classList.add("fa-spin");
         text.innerText = "Escaneando...";
         overlay.style.display = "flex";
+        // Asegurar que el overlay sea visible
+        overlay.classList.remove("hidden");
     } else {
         btn.disabled = false;
         icon.classList.remove("fa-spin");
         text.innerText = "Actualizar topología";
         overlay.style.display = "none";
+        overlay.classList.add("hidden");
         // Forzar limpieza si el mapa sigue borroso por algún CSS residual
         document.getElementById("network").style.filter = "none";
     }

@@ -3,11 +3,28 @@
 {% block content %}
 <style>
     /* Estilos para niveles de riesgo */
-    .riesgo-alto { color: #ef4444; font-weight: bold; } /* red-500 */
-    .riesgo-medio { color: #f59e0b; font-weight: bold; } /* amber-500 */
-    .riesgo-bajo { color: #10b981; font-weight: bold; } /* green-500 */
-    .riesgo-desconocido { color: #9ca3af; } /* gray-400 */
-    
+    .riesgo-alto {
+        color: #ef4444;
+        font-weight: bold;
+    }
+
+    /* red-500 */
+    .riesgo-medio {
+        color: #f59e0b;
+        font-weight: bold;
+    }
+
+    /* amber-500 */
+    .riesgo-bajo {
+        color: #10b981;
+        font-weight: bold;
+    }
+
+    /* green-500 */
+    .d-none {
+        display: none !important;
+    }
+
     .chart-container {
         height: 200px;
         display: flex;
@@ -17,6 +34,7 @@
         background: rgba(255, 255, 255, 0.05);
         border-radius: 12px;
     }
+
     .chart-bar {
         flex: 1;
         background: linear-gradient(to top, #22c55e, #06b6d4);
@@ -24,6 +42,7 @@
         position: relative;
         transition: height 0.5s ease;
     }
+
     .chart-label {
         position: absolute;
         bottom: -25px;
@@ -33,6 +52,7 @@
         color: #9ca3af;
         white-space: nowrap;
     }
+
     .chart-value {
         position: absolute;
         top: -20px;
@@ -43,28 +63,38 @@
     }
 </style>
 
+
+
+
 <div class="flex items-center justify-between mb-8">
     <div>
         <h2 class="text-3xl font-bold mb-2">Dashboard de Dispositivos</h2>
         <p class="text-gray-400 text-sm">Resultados del escaneo de red</p>
     </div>
     <div class="flex items-center gap-4">
+        <a href="{% url 'export_pdf' %}" class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all text-xs">
+            <i class="fa-solid fa-file-pdf text-red-500"></i> PDF
+        </a>
         <a href="{% url 'export_csv' %}" class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all text-xs">
             <i class="fa-solid fa-file-csv text-green-400"></i> CSV
         </a>
-        <a href="{% url 'export_json' %}" class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all text-xs">
+        <a href="{% url 'export_json' %}"
+            class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all text-xs">
             <i class="fa-solid fa-file-code text-blue-400"></i> JSON
         </a>
-        <a href="{% url 'export_excel' %}" class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all text-xs">
+        <a href="{% url 'export_excel' %}"
+            class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all text-xs">
             <i class="fa-solid fa-file-excel text-green-500"></i> Excel
         </a>
         <div class="flex gap-2 bg-white/5 p-1 rounded-xl border border-white/10">
-            <select id="tipoEscaneo" class="bg-transparent text-white px-3 py-2 outline-none border-none text-xs cursor-pointer">
+            <select id="tipoEscaneo"
+                class="bg-transparent text-white px-3 py-2 outline-none border-none text-xs cursor-pointer">
                 <option value="rapido" class="bg-gray-800">Rápido</option>
                 <option value="normal" selected class="bg-gray-800">Normal</option>
                 <option value="completo" class="bg-gray-800">Completo</option>
             </select>
-            <button type="button" id="scanBtn" class="bg-gradient-to-r from-green-500 to-cyan-600 px-6 py-2 rounded-lg font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all text-xs">
+            <button type="button" id="scanBtn"
+                class="bg-gradient-to-r from-green-500 to-cyan-600 px-6 py-2 rounded-lg font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all text-xs">
                 <i class="fa-solid fa-search"></i> Escanear
             </button>
         </div>
@@ -79,7 +109,9 @@
             <span class="font-bold" id="progress-percent">0%</span>
         </div>
         <div class="h-3 bg-white/10 rounded-full overflow-hidden">
-            <div id="main-progress-bar" class="h-full bg-gradient-to-r from-green-500 to-cyan-600 transition-all duration-300" style="width: 0%;"></div>
+            <div id="main-progress-bar"
+                class="h-full bg-gradient-to-r from-green-500 to-cyan-600 transition-all duration-300"
+                style="width: 0%;"></div>
         </div>
     </div>
 </div>
@@ -154,7 +186,7 @@
                     setTimeout(updateProgress, 1000);
                 } else if (data.status === 'finished') {
                     progressStatus.innerText = '¡Escaneo completado!';
-                    fetchData(); 
+                    fetchData();
                     fetchStats();
                     setTimeout(() => {
                         progressContainer.classList.add('d-none');
@@ -172,7 +204,7 @@
             });
     }
 
-    scanBtn.addEventListener('click', function() {
+    scanBtn.addEventListener('click', function () {
         const tipoEscaneo = document.getElementById('tipoEscaneo').value;
         progressContainer.classList.remove('d-none');
         progressStatus.classList.remove('text-red-500');
@@ -182,16 +214,16 @@
 
         fetch('{% url "scan" %}', {
             method: 'POST',
-            headers: { 
+            headers: {
                 'X-CSRFToken': '{{ csrf_token }}',
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ tipo_escaneo: tipoEscaneo })
         })
-        .then(response => response.json())
-        .then(data => {
-            updateProgress();
-        });
+            .then(response => response.json())
+            .then(data => {
+                updateProgress();
+            });
     });
 
     function formatFecha(fechaStr) {
@@ -205,7 +237,7 @@
             const hours = String(d.getHours()).padStart(2, '0');
             const minutes = String(d.getMinutes()).padStart(2, '0');
             return `${day}-${month}-${year} ${hours}:${minutes}`;
-        } catch(e) { return fechaStr; }
+        } catch (e) { return fechaStr; }
     }
 
     function formatPuertos(puertos) {
@@ -263,13 +295,13 @@
         const prevBtn = document.createElement('button');
         prevBtn.innerText = '«';
         prevBtn.className = `px-3 py-1 rounded bg-white/5 hover:bg-white/10 ${currentPage === 1 ? 'opacity-30 cursor-not-allowed' : ''}`;
-        prevBtn.onclick = () => { if(currentPage > 1) { currentPage--; displayData(); } };
+        prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; displayData(); } };
         paginationControls.appendChild(prevBtn);
 
         const nextBtn = document.createElement('button');
         nextBtn.innerText = '»';
         nextBtn.className = `px-3 py-1 rounded bg-white/5 hover:bg-white/10 ${currentPage === totalPages ? 'opacity-30 cursor-not-allowed' : ''}`;
-        nextBtn.onclick = () => { if(currentPage < totalPages) { currentPage++; displayData(); } };
+        nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; displayData(); } };
         paginationControls.appendChild(nextBtn);
     }
 
@@ -279,7 +311,7 @@
             .then(data => {
                 const cEscaneos = document.getElementById('chart-escaneos');
                 const cRiesgo = document.getElementById('chart-riesgo');
-                
+
                 cEscaneos.innerHTML = '';
                 cRiesgo.innerHTML = '';
 
@@ -300,9 +332,9 @@
                 data.riesgo.forEach(r => {
                     const h = (r.cantidad / maxRiesgo) * 100;
                     let color = 'linear-gradient(to top, #10b981, #34d399)'; // Bajo
-                    if(r.nivel === 'ALTO') color = 'linear-gradient(to top, #ef4444, #f87171)';
-                    if(r.nivel === 'MEDIO') color = 'linear-gradient(to top, #f59e0b, #fbbf24)';
-                    
+                    if (r.nivel === 'ALTO') color = 'linear-gradient(to top, #ef4444, #f87171)';
+                    if (r.nivel === 'MEDIO') color = 'linear-gradient(to top, #f59e0b, #fbbf24)';
+
                     cRiesgo.innerHTML += `
                         <div class="chart-bar" style="height: ${h}%; background: ${color}">
                             <span class="chart-value">${r.cantidad}</span>

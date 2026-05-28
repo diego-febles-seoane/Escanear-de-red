@@ -1,9 +1,13 @@
 from django.shortcuts import render, redirect
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.urls import reverse
+from django.template.loader import render_to_string
+from xhtml2pdf import pisa
+import io
 import threading
+from datetime import datetime
 import sys
 import os
 from functools import wraps
@@ -202,10 +206,16 @@ def scan(request):
             # Realizar el escaneo real
             ids = scanner.escanar_y_guardar(tipo_escaneo=t_escaneo)
             
+            if not ids:
+                scan_progress['percentage'] = 100
+                scan_progress['status'] = 'finished'
+                scan_progress['message'] = 'Escaneo finalizado sin nuevos cambios'
+                return
+
             # Limpiar caché de estadísticas al terminar un escaneo para que las gráficas se actualicen
             scan_progress['percentage'] = 100
             scan_progress['status'] = 'finished'
-            scan_progress['message'] = 'Escaneo completado'
+            scan_progress['message'] = 'Escaneo completado con éxito'
         except Exception as e:
             scan_progress['status'] = 'error'
             scan_progress['message'] = f'Error: {str(e)}'
@@ -581,6 +591,52 @@ def get_export_service():
     except Exception as e:
         print(f"Error loading export service: {e}")
         return None
+
+
+@mongo_login_required
+def export_pdf(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+    
+    repo = get_historial_repo()
+    if not repo:
+        return HttpResponse("Error: No se pudo conectar a la base de datos", status=500)
+    
+    try:
+        dispositivos = repo.listar_todos_limpio()
+        
+        # Calcular algunas estadísticas para el resumen
+        total = len(dispositivos)
+        riesgo_alto = sum(1 for d in dispositivos if str(d.get('riesgo', '')).upper() == 'ALTO')
+        
+        context = {
+            'dispositivos': dispositivos,
+            'total_dispositivos': total,
+            'riesgo_alto': riesgo_alto,
+            'fecha_actual': datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        }
+        
+        # Renderizar el HTML
+        html_string = render_to_string('panel/reporte_pdf.html', context)
+        
+        # Crear el PDF
+        result = io.BytesIO()
+        pdf = pisa.pisaDocument(io.BytesIO(html_string.encode("UTF-8")), result)
+        
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            filename = f"Informe_Red_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+            
+        return HttpResponse("Error al generar el PDF", status=500)
+        
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+        return HttpResponse(f"Error: {str(e)}", status=500)
 
 
 @mongo_login_required

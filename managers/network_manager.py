@@ -264,7 +264,8 @@ class network_manager:
                     f"{ip}/{mascara}",
                     strict=False
                 )
-                return str(red)
+                # Devolvemos solo la parte de la red sin la máscara para el ping sweep antiguo
+                return str(red.network_address).rsplit('.', 1)[0]
         return None
 
     """

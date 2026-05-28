@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+            margin-bottom: 2.5cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            color: #333333;
+            background-color: #ffffff;
+            line-height: 1.4;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #10b981;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0e1420;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            font-size: 12px;
+            color: #666666;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #06b6d4;
+            background-color: #f3f4f6;
+            padding: 8px;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #06b6d4;
+        }
+        .summary-table {
+            width: 100%;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .summary-table td {
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+        }
+        .label {
+            font-weight: bold;
+            color: #4b5563;
+            width: 40%;
+            background-color: #f9fafb;
+        }
+        table.device-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table.device-table th {
+            background-color: #0e1420;
+            color: #ffffff;
+            font-size: 10px;
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #0e1420;
+        }
+        table.device-table td {
+            font-size: 10px;
+            padding: 8px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #333333;
+        }
+        .riesgo-alto { color: #dc2626; font-weight: bold; }
+        .riesgo-medio { color: #d97706; font-weight: bold; }
+        .riesgo-bajo { color: #059669; font-weight: bold; }
+        
+        .footer {
+            text-align: center;
+            font-size: 9px;
+            color: #9ca3af;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 5px;
+            position: absolute;
+            bottom: 0px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">NetScanner - Informe de Auditoría de Red</div>
+        <div class="subtitle">Reporte generado el {{ fecha_actual }}</div>
+    </div>
+
+    <div class="section-title">Resumen del Escaneo</div>
+    <table class="summary-table">
+        <tr>
+            <td class="label">Total Dispositivos Detectados:</td>
+            <td>{{ total_dispositivos }}</td>
+        </tr>
+        <tr>
+            <td class="label">Alertas de Riesgo Alto:</td>
+            <td class="{% if riesgo_alto > 0 %}riesgo-alto{% endif %}">{{ riesgo_alto }}</td>
+        </tr>
+    </table>
+
+    <div class="section-title">Detalle de Dispositivos Activos</div>
+    <table class="device-table">
+        <thead>
+            <tr>
+                <th width="15%">Dirección IP</th>
+                <th width="20%">Dirección MAC</th>
+                <th width="30%">Nombre del Dispositivo</th>
+                <th width="15%">Fabricante</th>
+                <th width="10%">Riesgo</th>
+                <th width="10%">Visto</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in dispositivos %}
+            <tr>
+                <td>{{ item.ip }}</td>
+                <td>{{ item.mac }}</td>
+                <td>{{ item.nombre_dispositivo|default:"-" }}</td>
+                <td>{{ item.fabricante|default:"-" }}</td>
+                <td class="{% if item.riesgo == 'ALTO' or item.riesgo == 'alto' %}riesgo-alto{% elif item.riesgo == 'MEDIO' or item.riesgo == 'medio' %}riesgo-medio{% else %}riesgo-bajo{% endif %}">
+                    {{ item.riesgo|upper }}
+                </td>
+                <td style="text-align: center;">{{ item.veces_visto|default:"1" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div id="footer_content" class="footer">
+        NetScanner - Seguridad de Red - Página <pdf:pagenumber> de <pdf:pagecount>
+    </div>
+</body>
+</html>
