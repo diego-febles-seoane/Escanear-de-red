@@ -42,8 +42,8 @@
         <!-- 1. Campos a elegir (Burbujas) -->
         <div>
             <label class="block text-sm text-gray-400 mb-4">Campos a mostrar</label>
-            <div id="campos" class="flex flex-wrap gap-2">
-                <!-- Se cargan dinámicamente -->
+            <div id="campos-container" class="space-y-6">
+                <!-- Los campos se cargarán aquí organizados por categorías -->
             </div>
         </div>
 
@@ -104,40 +104,173 @@
         </button>
 
         <div class="pt-6 border-t border-white/10">
-            <div id="resultado" class="bg-black/30 rounded-xl p-4 overflow-x-auto min-h-[100px]">
-                <p class="text-gray-500 text-center italic">Los resultados aparecerán aquí...</p>
+            <div id="resultado" class="space-y-6">
+                <p class="text-gray-500 text-center italic py-12">Los resultados aparecerán aquí...</p>
+            </div>
+            <!-- Paginación para Consulta Personalizada -->
+            <div id="pagination-controls" class="p-6 border-t border-white/10 flex justify-center gap-2 hidden">
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Cargar campos y crear burbujas
+    let queryData = [];
+    let currentPage = 1;
+    const recordsPerPage = 4;
+
+    function displayQueryResults() {
+        const resultadoDiv = document.getElementById("resultado");
+        const paginationControls = document.getElementById("pagination-controls");
+        resultadoDiv.innerHTML = '';
+        
+        const start = (currentPage - 1) * recordsPerPage;
+        const end = start + recordsPerPage;
+        const paginatedItems = queryData.slice(start, end);
+
+        if (paginatedItems.length === 0) {
+            resultadoDiv.innerHTML = `<p class='text-gray-400 text-center p-8 italic'>No se encontraron resultados.</p>`;
+            paginationControls.classList.add('hidden');
+            return;
+        }
+
+        paginationControls.classList.remove('hidden');
+
+        paginatedItems.forEach((row, index) => {
+            const actualIndex = start + index + 1;
+            const registroCard = document.createElement('div');
+            registroCard.className = 'glass-card rounded-2xl p-6 border border-white/5 hover:border-cyan-500/30 transition-all duration-300 animate-fadeIn';
+            
+            let cardContent = `
+                <div class="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
+                    <span class="text-xs font-mono text-cyan-400 uppercase tracking-widest"># --- registro ${actualIndex} ----</span>
+                    <span class="text-xs text-gray-500">Resultado de consulta</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            `;
+
+            Object.entries(row).forEach(([key, value]) => {
+                let content = value || '-';
+                let extraClass = '';
+                const label = key.replace('historial.', '').replace('_', ' ').toUpperCase();
+
+                // Formatear riesgos
+                if (typeof content === 'string' && ['ALTO', 'MEDIO', 'BAJO'].includes(content.toUpperCase())) {
+                    if (content.toUpperCase() === 'ALTO') extraClass = 'bg-red-500/10 text-red-500 border-red-500/20';
+                    else if (content.toUpperCase() === 'MEDIO') extraClass = 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+                    else if (content.toUpperCase() === 'BAJO') extraClass = 'bg-green-500/10 text-green-500 border-green-500/20';
+                    
+                    content = `<span class="px-3 py-1 rounded-full text-xs font-bold border ${extraClass}">${content}</span>`;
+                }
+
+                // Formatear puertos si es un array
+                if (Array.isArray(content)) {
+                    content = content.map(p => p.puerto).join(', ') || 'Ninguno';
+                    content = `<span class="text-cyan-400 font-mono text-xs">${content}</span>`;
+                }
+
+                cardContent += `
+                    <div class="space-y-1">
+                        <label class="text-[10px] uppercase tracking-tighter text-gray-500 font-bold">${label}</label>
+                        <div class="text-sm text-gray-200">${content}</div>
+                    </div>
+                `;
+            });
+
+            cardContent += `</div>`;
+            registroCard.innerHTML = cardContent;
+            resultadoDiv.appendChild(registroCard);
+        });
+
+        updatePagination();
+    }
+
+    function updatePagination() {
+        const paginationControls = document.getElementById("pagination-controls");
+        const totalPages = Math.ceil(queryData.length / recordsPerPage);
+        paginationControls.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        const prevBtn = document.createElement('button');
+        prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+        prevBtn.className = `px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all ${currentPage === 1 ? 'opacity-30 cursor-not-allowed' : ''}`;
+        prevBtn.onclick = () => { if(currentPage > 1) { currentPage--; displayQueryResults(); } };
+        paginationControls.appendChild(prevBtn);
+
+        const pageInfo = document.createElement('span');
+        pageInfo.className = "px-4 py-2 text-sm text-gray-400 flex items-center";
+        pageInfo.innerText = `${currentPage} / ${totalPages}`;
+        paginationControls.appendChild(pageInfo);
+
+        const nextBtn = document.createElement('button');
+        nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+        nextBtn.className = `px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all ${currentPage === totalPages ? 'opacity-30 cursor-not-allowed' : ''}`;
+        nextBtn.onclick = () => { if(currentPage < totalPages) { currentPage++; displayQueryResults(); } };
+        paginationControls.appendChild(nextBtn);
+    }
+
+    // Cargar campos y crear burbujas organizadas
     fetch('{% url "query_campos" %}')
         .then(response => response.json())
         .then(data => {
-            const contenedor = document.getElementById("campos");
-            contenedor.innerHTML = "";
+            const container = document.getElementById("campos-container");
+            container.innerHTML = "";
 
+            const categorias = {
+                'historial': { label: 'Historial de Dispositivos', campos: [] },
+                'nombres': { label: 'Nombres Personalizados', campos: [] },
+                'logs': { label: 'Logs de Sistema', campos: [] }
+            };
+
+            // Clasificar campos
             data.forEach(campo => {
-                const bubble = document.createElement("div");
-                bubble.className = "campo-bubble px-4 py-2 rounded-full text-sm text-gray-300 bg-white/5";
-                bubble.innerText = campo.label;
-                bubble.dataset.value = campo.campo;
-                
-                bubble.addEventListener("click", () => {
-                    bubble.classList.toggle("active");
-                    bubble.classList.toggle("bg-white/5");
-                });
+                const prefix = campo.campo.split('.')[0];
+                if (categorias[prefix]) {
+                    categorias[prefix].campos.push(campo);
+                }
+            });
 
-                contenedor.appendChild(bubble);
+            // Renderizar categorías
+            Object.entries(categorias).forEach(([key, cat]) => {
+                if (cat.campos.length === 0) return;
+
+                const section = document.createElement("div");
+                section.className = "space-y-3";
+                
+                section.innerHTML = `
+                    <h4 class="text-xs font-bold text-cyan-500/70 uppercase tracking-widest border-b border-white/5 pb-2">${cat.label}</h4>
+                    <div id="campos-${key}" class="flex flex-wrap gap-2"></div>
+                `;
+                
+                container.appendChild(section);
+                const bubbleContainer = section.querySelector(`#campos-${key}`);
+
+                cat.campos.forEach(campo => {
+                    const bubble = document.createElement("div");
+                    bubble.className = "campo-bubble px-4 py-2 rounded-full text-sm text-gray-300 bg-white/5 cursor-pointer hover:bg-white/10 transition-all border border-white/5";
+                    bubble.innerText = campo.label;
+                    bubble.dataset.value = campo.campo;
+                    
+                    bubble.addEventListener("click", () => {
+                        bubble.classList.toggle("active");
+                        bubble.classList.toggle("bg-cyan-500/20");
+                        bubble.classList.toggle("text-cyan-400");
+                        bubble.classList.toggle("border-cyan-500/30");
+                    });
+
+                    bubbleContainer.appendChild(bubble);
+                });
             });
         });
 
+    function getSelectedFields() {
+        return Array.from(document.querySelectorAll(".campo-bubble.active"))
+            .map(b => b.dataset.value);
+    }
+
     document.getElementById("buscar").addEventListener("click", function () {
-        const camposSeleccionados = Array.from(
-            document.querySelectorAll(".campo-bubble.active")
-        ).map(b => b.dataset.value);
+        const camposSeleccionados = getSelectedFields();
 
         if (camposSeleccionados.length === 0) {
             alert("Por favor, selecciona al menos un campo para mostrar.");
@@ -177,49 +310,10 @@
             const resultadoDiv = document.getElementById("resultado");
             if (data.error) {
                 resultadoDiv.innerHTML = `<p class='text-red-400 p-4'>Error: ${data.error}</p>`;
-            } else if (!data || data.length === 0) {
-                resultadoDiv.innerHTML = `<p class='text-gray-400 text-center p-4 italic'>No se encontraron resultados.</p>`;
             } else {
-                // Crear tabla dinámica con el diseño del dashboard
-                let html = `
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="bg-white/5 text-gray-400 uppercase text-xs">
-                                <tr>
-                                    ${Object.keys(data[0]).map(key => `<th class="p-4 text-left">${key.replace('historial.', '').replace('_', ' ').toUpperCase()}</th>`).join('')}
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-white/5">
-                                ${data.map(row => `
-                                    <tr class="table-row hover:bg-white/5 transition-colors">
-                                        ${Object.values(row).map(value => {
-                                            let content = value || '-';
-                                            let extraClass = '';
-                                            
-                                            // Formatear riesgos
-                                            if (typeof content === 'string' && ['ALTO', 'MEDIO', 'BAJO'].includes(content.toUpperCase())) {
-                                                if (content.toUpperCase() === 'ALTO') extraClass = 'text-red-500 font-bold';
-                                                else if (content.toUpperCase() === 'MEDIO') extraClass = 'text-amber-500 font-bold';
-                                                else if (content.toUpperCase() === 'BAJO') extraClass = 'text-green-500 font-bold';
-                                            }
-
-                                            // Formatear puertos si es un array
-                                            if (Array.isArray(content)) {
-                                                content = content.map(p => p.puerto).join(', ') || 'Ninguno';
-                                                extraClass = 'text-cyan-400 font-mono text-xs';
-                                            }
-
-                                            return `<td class="p-4 ${extraClass}">${content}</td>`;
-                                        }).join('')}
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-                resultadoDiv.innerHTML = html;
-                resultadoDiv.classList.remove('bg-black/30');
-                resultadoDiv.classList.add('p-0');
+                queryData = data;
+                currentPage = 1;
+                displayQueryResults();
             }
         })
             .catch(err => {

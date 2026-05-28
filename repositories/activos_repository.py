@@ -97,15 +97,33 @@ class activos_repository:
                 "$group": {
                     "_id":
                     "$tipo_dispositivo",
-                    "total":
-                    {
-                        "$sum":
-                        1
-                    }
+                    "total": { "$sum": 1 }
                 }
             }
         ]
         return list(self.collection.aggregate(pipeline))
+
+    """
+    Metodo para convertir un documento de la base de datos a una representación limpia
+    @param documento: Documento de la base de datos
+    @return: Documento convertido
+    """
+    def convertir_documento(self, documento):
+        if "_id" in documento:
+            documento["_id"] = str(documento["_id"])
+        if "fecha" in documento and not isinstance(documento["fecha"], str):
+            documento["fecha"] = str(documento["fecha"])
+        return documento
+
+    """
+    Metodo para listar todos los activos en la base de datos de forma limpia (IDs como string)
+    @return: Lista de objetos Activos limpios
+    """
+    def listar_todos_limpio(self):
+        return [
+            self.convertir_documento(d)
+            for d in self.collection.find()
+        ]
 
     """
     Metodo para contar los activos por fabricante

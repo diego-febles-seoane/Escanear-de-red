@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+            margin-bottom: 2.5cm;
+        }
+        body {
+            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+            color: #1f2937;
+            line-height: 1.6;
+            font-size: 11px;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #10b981;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+        }
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #111827;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+        h1 {
+            color: #0891b2;
+            font-size: 22px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 8px;
+            margin-top: 35px;
+            page-break-before: auto;
+        }
+        h2 {
+            color: #059669;
+            font-size: 18px;
+            margin-top: 25px;
+            border-left: 5px solid #059669;
+            padding-left: 10px;
+        }
+        h3 {
+            color: #374151;
+            font-size: 14px;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        p, li {
+            text-align: justify;
+            margin-bottom: 10px;
+        }
+        .tech-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .class-name {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            color: #1e293b;
+            font-size: 13px;
+            display: block;
+            margin-bottom: 8px;
+            background: #f1f5f9;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        .method-list {
+            margin-left: 20px;
+            list-style-type: square;
+            color: #475569;
+        }
+        .method-name {
+            font-weight: bold;
+            color: #0369a1;
+        }
+        .footer {
+            text-align: center;
+            font-size: 10px;
+            color: #94a3b8;
+            position: absolute;
+            bottom: 0px;
+            width: 100%;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 10px;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+        .highlight {
+            color: #be185d;
+            font-weight: bold;
+        }
+        /* Nuevos estilos para tablas y diagramas */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 10px;
+        }
+        .data-table th {
+            background-color: #0f172a;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #1e293b;
+        }
+        .data-table td {
+            padding: 8px 10px;
+            border: 1px solid #e2e8f0;
+        }
+        .source-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .tag-os { background: #dcfce7; color: #166534; }
+        .tag-kernel { background: #dbeafe; color: #1e40af; }
+        .tag-db { background: #fef3c7; color: #92400e; }
+        .tag-api { background: #f3e8ff; color: #6b21a8; }
+
+        .flow-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .flow-step {
+            display: inline-block;
+            width: 120px;
+            padding: 15px 10px;
+            background: white;
+            border: 2px solid #0891b2;
+            border-radius: 8px;
+            vertical-align: middle;
+            position: relative;
+        }
+        .flow-arrow {
+            display: inline-block;
+            width: 30px;
+            height: 2px;
+            background: #94a3b8;
+            vertical-align: middle;
+            margin: 0 -5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">NetScanner: Manual Técnico Avanzado</div>
+        <div class="subtitle">Arquitectura, Flujos de Datos y Especificaciones de Clase</div>
+    </div>
+
+    <h1>1. Filosofía del Proyecto y Objetivos Técnicos</h1>
+    <p>
+        NetScanner es un sistema de auditoría de red de nivel profesional diseñado bajo el paradigma de <span class="highlight">Seguridad Pasiva</span>. El objetivo primordial es obtener visibilidad completa de la infraestructura de red sin interactuar directamente con los activos mediante escaneos de puertos intrusivos o inyecciones de paquetes que puedan desestabilizar sistemas industriales (OT) o activar sistemas de prevención de intrusiones (IPS).
+    </p>
+    <h2>Principios de Diseño:</h2>
+    <ul>
+        <li><strong>Invisibilidad Operativa:</strong> No genera tráfico detectable por firewalls o IDS corporativos.</li>
+        <li><strong>Arquitectura desacoplada:</strong> Uso estricto del patrón Service-Repository para facilitar el mantenimiento.</li>
+        <li><strong>Persistencia NoSQL:</strong> MongoDB Atlas para manejar esquemas de dispositivos altamente variables.</li>
+    </ul>
+
+    <h1>2. Flujo de Adquisición de Datos</h1>
+    <p>
+        El siguiente diagrama ilustra el proceso secuencial que sigue el sistema para construir un registro histórico sin emitir tráfico de red intrusivo:
+    </p>
+
+    <div class="flow-container">
+        <div class="flow-step"><b>CAPTURA</b><br/>Tabla ARP (OS)</div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step"><b>CORRELACIÓN</b><br/>psutil (Kernel)</div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step"><b>ENRIQUECIMIENTO</b><br/>OUI & Heurística</div>
+        <div class="flow-arrow"></div>
+        <div class="flow-step"><b>PERSISTENCIA</b><br/>MongoDB Atlas</div>
+    </div>
+
+    <h1>3. Matriz de Origen de Parámetros</h1>
+    <p>
+        Para garantizar la integridad y la naturaleza pasiva del sistema, cada parámetro almacenado en el histórico tiene un origen técnico trazable:
+    </p>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Parámetro</th>
+                <th>Origen Técnico</th>
+                <th>Método de Extracción</th>
+                <th>Fuente</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><b>IP / MAC</b></td>
+                <td>Caché ARP del Sistema</td>
+                <td>Subproceso: <code>arp -a</code></td>
+                <td><span class="source-tag tag-os">Sistema Operativo</span></td>
+            </tr>
+            <tr>
+                <td><b>Puertos / Conexiones</b></td>
+                <td>Kernel Socket Table</td>
+                <td>Librería: <code>psutil.net_connections()</code></td>
+                <td><span class="source-tag tag-kernel">Kernel</span></td>
+            </tr>
+            <tr>
+                <td><b>Fabricante</b></td>
+                <td>MAC OUI Database</td>
+                <td>API: <code>macvendors.com</code> + Caché local</td>
+                <td><span class="source-tag tag-api">API Externa</span></td>
+            </tr>
+            <tr>
+                <td><b>Hostname</b></td>
+                <td>DNS Inverso / NetBIOS</td>
+                <td><code>socket.gethostbyaddr()</code></td>
+                <td><span class="source-tag tag-os">Red Local</span></td>
+            </tr>
+            <tr>
+                <td><b>Tipo de Dispositivo</b></td>
+                <td>Motor de Inferencia</td>
+                <td>Heurística de clasificación propia</td>
+                <td><span class="source-tag tag-db">Lógica Interna</span></td>
+            </tr>
+            <tr>
+                <td><b>Riesgo</b></td>
+                <td>Análisis de Exposición</td>
+                <td>Algoritmo de criticidad ponderada</td>
+                <td><span class="source-tag tag-db">Lógica Interna</span></td>
+            </tr>
+            <tr>
+                <td><b>Veces Visto</b></td>
+                <td>Agregación Histórica</td>
+                <td><code>collection.count_documents()</code></td>
+                <td><span class="source-tag tag-db">MongoDB</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <h1>4. Núcleo de Gestión (Capa Managers)</h1>
+    <p>Esta capa interactúa directamente con los recursos del sistema y controladores externos.</p>
+    
+    <div class="tech-box">
+        <span class="class-name">network_manager.py</span>
+        <h3>Descripción Técnica:</h3>
+        <p>Implementa la abstracción de red utilizando subprocesos del sistema y la librería <i>psutil</i>. Su función es actuar como un "sniffer" de configuración y estado.</p>
+        <h3>Métodos Críticos:</h3>
+        <ul class="method-list">
+            <li><span class="method-name">obtener_conexiones_observadas():</span> Utiliza llamadas al kernel mediante <i>psutil.net_connections</i> para identificar sockets abiertos y sus destinos remotos.</li>
+            <li><span class="method-name">leer_tabla_arp():</span> Ejecuta comandos nativos del SO para extraer la caché de resolución de direcciones física-lógica.</li>
+            <li><span class="method-name">obtener_hostname():</span> Implementa una resolución DNS inversa local recursiva.</li>
+        </ul>
+    </div>
+
+    <div class="tech-box">
+        <span class="class-name">mongo_manager.py</span>
+        <h3>Descripción Técnica:</h3>
+        <p>Gestiona el ciclo de vida de la conexión con MongoDB. Implementa el patrón <b>Singleton</b> para evitar el agotamiento de sockets en el servidor de base de datos.</p>
+        <ul class="method-list">
+            <li>Manejo dinámico de URIs de conexión.</li>
+            <li>Validación de estado mediante comandos de ping administrativos a la instancia de Atlas.</li>
+        </ul>
+    </div>
+
+    <div class="page-break"></div>
+
+    <h1>3. Lógica de Persistencia (Capa Repositories)</h1>
+    
+    <div class="tech-box">
+        <span class="class-name">historial_repository.py</span>
+        <h3>Especificación:</h3>
+        <p>Gestiona la serie temporal de auditoría. Permite la reconstrucción histórica de la red.</p>
+        <ul class="method-list">
+            <li><span class="method-name">listar_todos_limpio():</span> Implementa la lógica de sanitización de documentos BSON para su consumo en interfaces JSON/Web.</li>
+            <li><span class="method-name">buscar_primer_registro_por_mac():</span> Vital para el análisis forense y detección de intrusiones (primera vez que un dispositivo fue visto).</li>
+        </ul>
+    </div>
+
+    <div class="tech-box">
+        <span class="class-name">activos_repository.py</span>
+        <h3>Especificación:</h3>
+        <p>Mantiene el estado "Hot" de la red. Esta colección se sincroniza en cada ciclo de observación para alimentar la vista de Topología.</p>
+        <ul class="method-list">
+            <li><span class="method-name">contar_por_tipo() / contar_por_fabricante():</span> Utiliza el motor de agregación de MongoDB para generar estadísticas en tiempo real con alta eficiencia (O(n)).</li>
+        </ul>
+    </div>
+
+    <h1>4. Orquestación y Negocio (Capa Services)</h1>
+
+    <div class="tech-box">
+        <span class="class-name">scanner_service.py</span>
+        <h3>Descripción de Proceso:</h3>
+        <p>Es el director de orquesta. Implementa el algoritmo de descubrimiento pasivo en 4 fases:</p>
+        <ol>
+            <li>Extracción de topología lógica (ARP).</li>
+            <li>Correlación de sockets activos (psutil).</li>
+            <li>Enriquecimiento de datos (Vendor & Classification).</li>
+            <li>Evaluación de criticidad (Risk Analysis).</li>
+        </ol>
+    </div>
+
+    <div class="tech-box">
+        <span class="class-name">device_classifier_service.py</span>
+        <h3>Motor de Clasificación:</h3>
+        <p>Implementa un motor de inferencia basado en pesos. Analiza patrones en hostnames (ej: "SRV-" para servidores), fabricantes (ej: "Cisco" para infraestructura) y servicios observados para asignar una categoría al dispositivo.</p>
+    </div>
+
+    <div class="tech-box">
+        <span class="class-name">risk_service.py</span>
+        <h3>Algoritmo de Riesgo:</h3>
+        <p>Calcula un vector de amenaza basado en la exposición de servicios conocidos, vulnerabilidades teóricas del fabricante y el rol del dispositivo en la red.</p>
+    </div>
+
+    <div class="footer">
+        © 2026 NetScanner - Documentación de Ingeniería - Generado el {{ fecha_actual }}
+    </div>
+</body>
+</html>

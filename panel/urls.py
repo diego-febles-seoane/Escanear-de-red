@@ -54,6 +54,7 @@ urlpatterns = [
     path('export/json/', views.export_json, name='export_json'),
     path('export/excel/', views.export_excel, name='export_excel'),
     path('export/pdf/', views.export_pdf, name='export_pdf'),
+    path('export/pdf-documentacion/', views.export_pdf_documentacion, name='export_pdf_documentacion'),
     path('topologia/', views.topologia_page, name='topologia'),
     path('topologia-datos/', views.topologia_datos, name='topologia_datos'),
     path('alertas/', views.alerts_page, name='alertas'),

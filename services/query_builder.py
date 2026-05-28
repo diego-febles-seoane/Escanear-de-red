@@ -25,8 +25,6 @@ class query_builder_Service:
             { "label": "Puertos", "campo": "historial.puertos", "tipo_input": "text" },
             { "label": "Primera Vez", "campo": "historial.primera_vez", "tipo_input": "date" },
             { "label": "Última Vez", "campo": "historial.ultima_vez", "tipo_input": "date" },
-            # ---- ACTIVOS ----
-            { "label": "Estado", "campo": "activos.estado", "tipo_input": "select" },
             # ---- NOMBRES ----
             { "label": "Nombre Personalizado", "campo": "nombres.nombre", "tipo_input": "text" },
             # ---- LOGS ----

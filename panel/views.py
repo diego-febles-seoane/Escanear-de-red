@@ -7,7 +7,7 @@ from django.template.loader import render_to_string
 from xhtml2pdf import pisa
 import io
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 import sys
 import os
 from functools import wraps
@@ -150,22 +150,13 @@ def scan(request):
     if scan_progress['status'] == 'running':
         return JsonResponse({'status': 'already_running'})
     
-    import json
-    tipo_escaneo = "normal"
-    try:
-        body = json.loads(request.body)
-        tipo_escaneo = body.get('tipo_escaneo', 'normal')
-    except:
-        # Si no es JSON (p.ej. FormData), intentamos obtenerlo de POST
-        tipo_escaneo = request.POST.get('tipo_escaneo', 'normal')
-
     scan_progress = {
         'percentage': 0,
         'status': 'running',
-        'message': f'Iniciando escaneo {tipo_escaneo}...'
+        'message': 'Iniciando observación pasiva...'
     }
     
-    def run_scan(t_escaneo, m_user, m_pass, m_host):
+    def run_scan(m_user, m_pass, m_host):
         global scan_progress
         try:
             # Restaurar contexto de MongoDB en el nuevo hilo
@@ -175,47 +166,20 @@ def scan(request):
             if not scanner:
                 raise Exception("No se pudo inicializar el servicio de escaneo")
             
-            scan_progress['percentage'] = 5
-            scan_progress['message'] = 'Iniciando escaneo de red...'
-            
-            # 1. Obtener rango
-            rango = scanner.network.obtener_rango_ip()
-            scan_progress['message'] = f'Escaneando rango {rango}.0/24...'
-            
-            # Ping Sweep optimizado
-            scanner.network.hacer_ping_sweep(rango)
+            def progress_callback(percentage, message):
+                scan_progress['percentage'] = percentage
+                scan_progress['message'] = message
 
-            scan_progress['percentage'] = 40
-            scan_progress['message'] = 'Obteniendo dispositivos activos...'
-            dispositivos = scanner.network.obtener_dispositivos_desde_arp()
+            # Realizar observación pasiva sin enviar paquetes
+            ids = scanner.escanar_y_guardar(progress_callback=progress_callback)
             
-            if not dispositivos:
-                scan_progress['percentage'] = 100
-                scan_progress['status'] = 'finished'
-                scan_progress['message'] = 'No se encontraron dispositivos'
-                return
-
-            total = len(dispositivos)
-            scan_progress['message'] = f'Procesando {total} dispositivos...'
-            
-            # 3. Procesar cada dispositivo (Simulación de progreso)
-            for idx, dispositivo in enumerate(dispositivos):
-                scan_progress['percentage'] = 40 + int(((idx + 1) / total) * 50)
-                scan_progress['message'] = f'Analizando {dispositivo.get("ip")} ({idx+1}/{total})...'
-                
-            # Realizar el escaneo real
-            ids = scanner.escanar_y_guardar(tipo_escaneo=t_escaneo)
-            
-            if not ids:
-                scan_progress['percentage'] = 100
-                scan_progress['status'] = 'finished'
-                scan_progress['message'] = 'Escaneo finalizado sin nuevos cambios'
-                return
-
-            # Limpiar caché de estadísticas al terminar un escaneo para que las gráficas se actualicen
             scan_progress['percentage'] = 100
             scan_progress['status'] = 'finished'
-            scan_progress['message'] = 'Escaneo completado con éxito'
+            if ids:
+                scan_progress['message'] = 'Observación completada con éxito'
+            else:
+                scan_progress['message'] = 'Finalizado. No se detectó actividad reciente.'
+                
         except Exception as e:
             scan_progress['status'] = 'error'
             scan_progress['message'] = f'Error: {str(e)}'
@@ -225,7 +189,7 @@ def scan(request):
     m_pass = request.session.get('mongo_password')
     m_host = request.session.get('mongo_host')
     
-    thread = threading.Thread(target=run_scan, args=(tipo_escaneo, m_user, m_pass, m_host))
+    thread = threading.Thread(target=run_scan, args=(m_user, m_pass, m_host))
     thread.daemon = True
     thread.start()
     
@@ -315,8 +279,19 @@ def get_activos(request):
     )
     
     try:
-        data = get_last_active_devices()
-        print(f"Enviando {len(data)} dispositivos únicos a la topología")
+        repo = get_activos_repo()
+        if not repo:
+            return JsonResponse({'error': 'No se pudo conectar al repositorio de activos'}, status=500)
+        
+        # Obtenemos directamente de la colección 'activos' que se borra y rellena en cada escaneo
+        data = list(repo.collection.find())
+        
+        for item in data:
+            item["_id"] = str(item["_id"])
+            if "tipo_dispositivo" not in item and "tipo" in item:
+                item["tipo_dispositivo"] = item["tipo"]
+                
+        print(f"Enviando {len(data)} dispositivos del último escaneo a la topología")
         return JsonResponse(data, safe=False)
     except Exception as e:
         print(f"Error al obtener activos: {e}")
@@ -521,7 +496,6 @@ def get_stats(request):
         request.session.get('mongo_host')
     )
     
-    from datetime import datetime, timedelta
     repo_historial = get_historial_repo()
     
     # 1. Escaneos últimos 3 días (agrupados por día)
@@ -640,6 +614,33 @@ def export_pdf(request):
 
 
 @mongo_login_required
+def export_pdf_documentacion(request):
+    try:
+        context = {
+            'fecha_actual': datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        }
+        
+        # Renderizar el HTML de la documentación
+        html_string = render_to_string('panel/reporte_documentacion_pdf.html', context)
+        
+        # Crear el PDF
+        result = io.BytesIO()
+        pdf = pisa.pisaDocument(io.BytesIO(html_string.encode("UTF-8")), result)
+        
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            filename = f"Documentacion_Proyecto_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+            
+        return HttpResponse("Error al generar el PDF de documentación", status=500)
+        
+    except Exception as e:
+        print(f"Error generating documentation PDF: {e}")
+        return HttpResponse(f"Error: {str(e)}", status=500)
+
+
+@mongo_login_required
 def export_csv(request):
     set_mongo_session_data(
         request.session.get('mongo_user'),
@@ -647,8 +648,6 @@ def export_csv(request):
         request.session.get('mongo_host')
     )
     
-    from django.http import HttpResponse
-    from datetime import datetime
     import csv
     
     repo = get_historial_repo()
@@ -682,8 +681,6 @@ def export_json(request):
         request.session.get('mongo_host')
     )
     
-    from django.http import HttpResponse
-    from datetime import datetime
     import json
     
     repo = get_historial_repo()
@@ -710,10 +707,7 @@ def export_excel(request):
         request.session.get('mongo_host')
     )
     
-    from django.http import HttpResponse
-    from datetime import datetime
     import tempfile
-    import os
     
     repo = get_historial_repo()
     if not repo:
@@ -764,18 +758,16 @@ def topologia_datos(request):
     
     # Si ya hay un escaneo en curso, no iniciamos otro pero devolvemos los datos actuales
     if scan_progress['status'] == 'running':
-        data = get_last_active_devices()
+        repo_activos = get_activos_repo()
+        data = repo_activos.listar_todos_limpio() if repo_activos else []
         return JsonResponse({"status": "running", "data": data})
 
     try:
-        from services.scanner_service import scanner_service
-        from repositories.activos_repository import activos_repository
-        
-        # Iniciamos el escaneo rápido de forma asíncrona para no bloquear
+        # Iniciamos la observación pasiva de forma asíncrona para no bloquear
         scan_progress = {
             'percentage': 0,
             'status': 'running',
-            'message': 'Iniciando escaneo rápido para topología...'
+            'message': 'Iniciando observación pasiva para topología...'
         }
 
         def run_topo_scan(m_user, m_pass, m_host):
@@ -784,23 +776,19 @@ def topologia_datos(request):
                 # Restaurar contexto de MongoDB en el nuevo hilo
                 set_mongo_session_data(m_user, m_pass, m_host)
                 
-                scanner = scanner_service()
-                
-                scan_progress['percentage'] = 10
-                scan_progress['message'] = 'Iniciando escaneo de red (Topología)...'
-                
-                # escanar_y_guardar ya hace el ping sweep optimizado
-                scanner.escanar_y_guardar(tipo_escaneo="rapido")
+                scanner = get_scanner_service()
+                if scanner:
+                    scan_progress['percentage'] = 10
+                    scan_progress['message'] = 'Observando red (Topología)...'
+                    scanner.escanar_y_guardar()
                 
                 scan_progress['percentage'] = 100
                 scan_progress['status'] = 'finished'
-                scan_progress['message'] = 'Escaneo de topología completado'
+                scan_progress['message'] = 'Observación de topología completada'
             except Exception as e:
                 scan_progress['status'] = 'error'
                 scan_progress['message'] = str(e)
                 print(f"Topo scan error: {e}")
-                import traceback
-                traceback.print_exc()
 
         m_user = request.session.get('mongo_user')
         m_pass = request.session.get('mongo_password')
@@ -810,16 +798,10 @@ def topologia_datos(request):
         thread.daemon = True
         thread.start()
 
-        data = get_last_active_devices()
+        repo_activos = get_activos_repo()
+        data = repo_activos.listar_todos_limpio() if repo_activos else []
             
         return JsonResponse({"status": "started", "data": data})
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-
-        return JsonResponse(
-            {
-                "error": str(e)
-            },
-            status=500
-        )
+        print(f"Error en topologia_datos: {e}")
+        return JsonResponse({"error": str(e)}, status=500)

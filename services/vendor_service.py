@@ -57,8 +57,9 @@ class vendor_service:
 
         if fabricante != "Desconocido":
             self.fabricnate_repository.insertar_fabricante(oui, fabricante)
+            # Solo dormimos si hemos consultado la API para respetar el rate limit
+            time.sleep(1)
 
-        time.sleep(1)
         return fabricante
 
 

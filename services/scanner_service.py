@@ -59,34 +59,44 @@ class scanner_service:
         return "Desconocido"
         
     """
-    Escanea la red para obtener información de los dispositivos
-    y los guarda en la base de datos Historial
+    Realiza una observación pasiva de la red y guarda los resultados.
+    No envía paquetes ICMP ni realiza escaneos de puertos por sockets.
     """
-    def escanar_y_guardar(self, tipo_escaneo="normal"):
+    def escanar_y_guardar(self, progress_callback=None):
+        def update_progress(percentage, message):
+            if progress_callback:
+                progress_callback(percentage, message)
+
+        update_progress(5, "Iniciando observación pasiva de la red...")
         rango = self.network.obtener_rango_ip()
         print ("Rango detectado:", rango)
 
-
-        """
-        Escanea cada IP en el rango para obtener información de los dispositivos en la red
-        """
-        self.network.hacer_ping_sweep(rango)
-
-
+        update_progress(15, "Leyendo tabla ARP del sistema...")
+        # Eliminamos el barrido de ping para no enviar paquetes a las IPs
         dispositivos = self.network.obtener_dispositivos_desde_arp()
         print(f"Dispositivos encontrados en ARP: {len(dispositivos)}")
 
+        if not dispositivos:
+            update_progress(100, "No se encontraron dispositivos en la caché local.")
+            return None
+
+        update_progress(30, "Analizando conexiones activas del equipo monitor...")
+        # Usamos psutil para ver conexiones reales sin enviar paquetes
+        conexiones_por_ip = self.network.obtener_conexiones_observadas()
 
         historiales = []
+        total = len(dispositivos)
        
-        """
-        Procesa cada dispositivo en la lista de dispositivos
-        para obtener información de fabricante y guardarla en Historial
-        """
-        for dispositivo in dispositivos:
+        for idx, dispositivo in enumerate(dispositivos):
+            ip = dispositivo.get("ip")
+            update_progress(
+                40 + int((idx / total) * 50),
+                f"Procesando {ip} ({idx+1}/{total})..."
+            )
             
             # ---- FABRICANTE ----
             fabricante = self.vendor.obtener_fabricante(dispositivo.get("mac"))
+            
             # ---- COMPROBAR FABRICANTE ----
             self.alertas.comprobar_fabricante(
                 {
@@ -95,23 +105,17 @@ class scanner_service:
                     "fabricante": fabricante
                 }
             )
-            # ---- PUERTOS ----
-            ip = dispositivo.get("ip")
-            if tipo_escaneo == "rapido":
-                puertos = (
-                    self.network
-                    .obtener_puertos_rapido(ip)
-                )
-            elif tipo_escaneo == "completo":
-                puertos = (
-                    self.network
-                    .obtener_puertos_completo(ip)
-                )
-            else:
-                puertos = (
-                    self.network
-                    .obtener_puertos_normal(ip)
-                )
+            
+            # ---- CONEXIONES OBSERVADAS (PASIVO) ----
+            puertos = conexiones_por_ip.get(ip, [
+                {
+                    "puerto": "No detectado",
+                    "servicio": "Sin conexiones directas con monitor",
+                    "estado": "Desconocido",
+                    "pid": "-"
+                }
+            ])
+
             # ---- TIPO DISPOSITIVO ----
             tipo = self.classifier.clasificar(
                 fabricante = fabricante,
@@ -161,16 +165,15 @@ class scanner_service:
             )
 
             if primer_registro:
-
                 primera_vez = (
                     primer_registro.get("primera_vez")
                     or primer_registro.get("primera_vez_conectado")
                     or primer_registro.get("fecha")
                 )
-
             else:
                 primera_vez = fecha_actual
             ultima_vez = fecha_actual
+            
             # ---- COMPARAR CON ANTIMO REGISTRO ----
             actual_para_comparar = {
                 "mac": mac,
@@ -206,11 +209,10 @@ class scanner_service:
                 ultima_vez = ultima_vez
             )
 
-
             historiales.append(historial)
 
-
         # ---- BORRADO E INSERCIÓN DE ACTIVOS ----
+        update_progress(95, "Guardando resultados en base de datos...")
         self.activos_repo.borrar_todo()
         
         if historiales:
@@ -226,8 +228,9 @@ class scanner_service:
             )
 
             print("Registros insertados:", len(ids))
+            update_progress(100, "Observación finalizada con éxito.")
             return ids
 
-
         print("No se encontraron dispositivos")
+        update_progress(100, "No se detectaron dispositivos activos.")
         return None

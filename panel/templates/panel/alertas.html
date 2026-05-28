@@ -13,7 +13,7 @@
         <h3 class="text-xl font-semibold">Historial de Alertas</h3>
         <div id="pagination-info" class="text-sm text-gray-400"></div>
     </div>
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto scrollbar-hide">
         <table class="w-full">
             <thead class="bg-white/5 text-gray-400 text-xs uppercase">
                 <tr>
@@ -70,7 +70,7 @@
             }
 
             tableBody.innerHTML += `
-                <tr class="table-row border-b border-white/5 hover:bg-white/5 transition-colors">
+                <tr class="table-row border-b border-white/5 hover:bg-white/5 transition-all duration-300 hover:translate-x-1">
                     <td class="p-5 text-sm">${alerta.ip || '-'}</td>
                     <td class="p-5 text-sm font-mono">${alerta.mac || '-'}</td>
                     <td class="p-5 text-sm font-semibold text-cyan-400">${alerta.tipo}</td>
@@ -80,7 +80,6 @@
                 </tr>
             `;
         });
-
         updatePaginationControls();
     }
     function updatePaginationControls() {
@@ -91,14 +90,14 @@
         if (totalPages <= 1) return;
 
         const prevBtn = document.createElement('button');
-        prevBtn.innerText = '«';
-        prevBtn.className = `px-3 py-1 rounded bg-white/5 hover:bg-white/10 ${currentPage === 1 ? 'opacity-30 cursor-not-allowed' : ''}`;
+        prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+        prevBtn.className = `px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all ${currentPage === 1 ? 'opacity-30 cursor-not-allowed' : ''}`;
         prevBtn.onclick = () => { if(currentPage > 1) { currentPage--; displayAlerts(); } };
         paginationControls.appendChild(prevBtn);
 
         const nextBtn = document.createElement('button');
-        nextBtn.innerText = '»';
-        nextBtn.className = `px-3 py-1 rounded bg-white/5 hover:bg-white/10 ${currentPage === totalPages ? 'opacity-30 cursor-not-allowed' : ''}`;
+        nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+        nextBtn.className = `px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all ${currentPage === totalPages ? 'opacity-30 cursor-not-allowed' : ''}`;
         nextBtn.onclick = () => { if(currentPage < totalPages) { currentPage++; displayAlerts(); } };
         paginationControls.appendChild(nextBtn);
     }
