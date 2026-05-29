@@ -6,42 +6,122 @@
         <h2 class="text-3xl font-bold mb-2">Topología de red</h2>
         <p class="text-gray-400 text-sm">Visualización de dispositivos activos en la red</p>
     </div>
-    <button id="actualizarTopologia" class="bg-gradient-to-r from-green-500 to-cyan-600 px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all flex items-center gap-2">
-        <i class="fa-solid fa-sync-alt" id="syncIcon"></i> 
-        <span id="btnText">Actualizar topología</span>
-    </button>
+    <div class="flex items-center gap-4">
+        <a href="{% url 'export_pdf' %}"
+            class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all text-xs">
+            <i class="fa-solid fa-file-pdf text-red-500"></i> Reporte Red
+        </a>
+        <a href="{% url 'export_csv' %}"
+            class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all text-xs">
+            <i class="fa-solid fa-file-csv text-green-500"></i> CSV
+        </a>
+        <a href="{% url 'export_json' %}"
+            class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all text-xs">
+            <i class="fa-solid fa-file-code text-blue-500"></i> JSON
+        </a>
+        <a href="{% url 'export_excel' %}"
+            class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all text-xs">
+            <i class="fa-solid fa-file-excel text-green-600"></i> Excel
+        </a>
+        <button id="actualizarTopologia" class="bg-gradient-to-r from-green-500 to-cyan-600 px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all flex items-center gap-2">
+            <i class="fa-solid fa-sync-alt" id="syncIcon"></i> 
+            <span id="btnText">Actualizar topología</span>
+        </button>
+    </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-    <!-- Mapa de Red -->
-    <div class="lg:col-span-3 glass-card rounded-2xl overflow-hidden">
-        <div class="p-6 border-b border-white/10 flex justify-between items-center">
-            <h3 class="text-xl font-semibold text-cyan-400">Mapa de Red</h3>
-            <span class="text-xs text-gray-500 italic">Haz clic en un dispositivo para expandir su información</span>
-        </div>
-        <div class="p-6 relative">
-            <div id="network" style="height:700px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);"></div>
-            
-            <!-- Overlay de carga -->
-            <div id="loadingOverlay" class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-12 z-[9999]" style="display: none;">
-                <div class="text-center bg-gray-900/90 p-10 rounded-2xl border border-white/10 shadow-2xl relative">
-                    <!-- Botón de cierre manual (emergencia) -->
-                    <button type="button" id="closeOverlayBtn" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors cursor-pointer p-2">
-                        <i class="fa-solid fa-times text-xl"></i>
-                    </button>
-                    
-                    <div class="animate-spin text-cyan-400 text-5xl mb-6"><i class="fa-solid fa-circle-notch"></i></div>
-                    <p class="text-white font-bold text-xl mb-2" id="loadingText">Analizando red...</p>
-                    <p class="text-gray-400 text-sm">Actualizando mapa de dispositivos</p>
+        <div class="lg:col-span-3 flex flex-col gap-6">
+            <div class="glass-card rounded-3xl border border-white/10 p-1 relative overflow-hidden flex-1 min-h-[750px]">
+                <!-- Contenedor de Inundación (AHORA DETRÁS DE LOS TÍTULOS PERO DELANTE DEL MAPA) -->
+                <div id="liquid-fill-container" class="absolute inset-0 z-20 pointer-events-none opacity-0 transition-opacity duration-500">
+                    <div
+                        id="liquid-layer-1"
+                        class="liquid-layer liquid-blue"
+                        style="height:0%;"
+                    >
+                        <div class="wave-track wave-track-1">
+                            <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
+                                <path d="
+                                    M0,70
+                                    C240,20 480,20 720,70
+                                    C960,120 1200,120 1440,70
+                                    C1680,20 1920,20 2160,70
+                                    C2400,120 2640,120 2880,70
+                                    L2880,120
+                                    L0,120
+                                    Z
+                                "></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div
+                        id="liquid-layer-2"
+                        class="liquid-layer liquid-cyan"
+                        style="height:0%; transition-delay:100ms;"
+                    >
+                        <div class="wave-track wave-track-2">
+                            <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
+                                <path d="
+                                    M0,70
+                                    C240,40 480,40 720,70
+                                    C960,100 1200,100 1440,70
+                                    C1680,40 1920,40 2160,70
+                                    C2400,100 2640,100 2880,70
+                                    L2880,120
+                                    L0,120
+                                    Z
+                                "></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div
+                        id="liquid-layer-3"
+                        class="liquid-layer liquid-front"
+                        style="height:0%; transition-delay:200ms;"
+                    >
+                        <div class="wave-track wave-track-3">
+                            <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
+                                <path d="
+                                    M0,75
+                                    C240,55 480,55 720,75
+                                    C960,95 1200,95 1440,75
+                                    C1680,55 1920,55 2160,75
+                                    C2400,95 2640,95 2880,75
+                                    L2880,120
+                                    L0,120
+                                    Z
+                                "></path>
+                            </svg>
+                        </div>
+                    </div>
                 </div>
+                <div class="p-6 flex justify-between items-center border-b border-white/5 relative z-30">
+                    <div class="header-readable-box">
+                        <h3 class="text-2xl font-bold text-white flex items-center gap-3">
+                            <i class="fa-solid fa-network-wired text-cyan-400"></i>
+                            Mapa de Red
+                        </h3>
+                        <p class="text-gray-300 text-xs mt-1">
+                            Visualización de nodos y conexiones activas
+                        </p>
+                    </div>
+                    <div id="topoProgressInfo" class="hidden flex flex-col items-end mr-4 header-readable-box">
+                        <span id="topoStatus" class="text-[10px] text-cyan-400 font-bold uppercase tracking-tighter">Observando...</span>
+                        <span id="topoTimer" class="text-[10px] text-gray-500 font-mono">00:00 | Est: --:--</span>
+                    </div>
+                </div>
+                <!-- Contenedor de Vis.js (Debajo de las olas) -->
+                <div id="network" class="w-full h-[650px] bg-[#0a0f18]/95 relative z-10"></div>
             </div>
         </div>
-    </div>
 
     <!-- Gráficos de Dispositivos -->
     <div class="lg:col-span-1 space-y-6">
-        <div class="glass-card rounded-2xl p-6 border border-white/10">
-            <h3 class="text-xl font-semibold mb-6 text-cyan-400 text-center">Tipos de Dispositivos</h3>
+        <div class="glass-card rounded-2xl p-6 border border-white/10 relative overflow-hidden">
+            <h3 class="text-xl font-semibold mb-6 text-cyan-400 text-center">Tipos de Dispositivo</h3>
             <div class="relative" style="height: 250px;">
                 <canvas id="deviceTypeChart"></canvas>
             </div>
@@ -50,7 +130,7 @@
             </div>
         </div>
 
-        <div class="glass-card rounded-2xl p-6 border border-white/10">
+        <div class="glass-card rounded-2xl p-6 border border-white/10 flex flex-col items-center justify-center relative overflow-hidden">
             <h3 class="text-xl font-semibold mb-4 text-cyan-400 text-center">Resumen de Activos</h3>
             <div class="text-center">
                 <p class="text-4xl font-bold text-white" id="totalDevices">0</p>
@@ -59,6 +139,134 @@
         </div>
     </div>
 </div>
+
+<style>
+    .header-readable-box {
+        background: rgba(10, 15, 24, 0.78);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(12px);
+        border-radius: 18px;
+        padding: 14px 18px;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+    }
+    .liquid-layer {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        overflow: visible;
+        transition: height 1000ms ease-in-out;
+    }
+    #liquid-layer-1 {
+        z-index: 21;
+    }
+    #liquid-layer-2 {
+        z-index: 22;
+    }
+    #liquid-layer-3 {
+        z-index: 23;
+    }
+
+    /* =========================
+    COLORES
+    ========================= */
+
+    .liquid-blue {
+        background: linear-gradient(
+            to top,
+            #7f1d1d 0%,
+            #dc2626 60%,
+            #f87171 100%
+        );
+    }
+
+    .liquid-cyan {
+        background: linear-gradient(
+            to top,
+            #78350f 0%,
+            #d97706 60%,
+            #fbbf24 100%
+        );
+    }
+
+    .liquid-front {
+        background: linear-gradient(
+            to top,
+            #155e75 0%,
+            #06b6d4 60%,
+            #22d3ee 100%
+        );
+    }
+
+    /* =========================
+    OLAS
+    ========================= */
+
+    .wave-track {
+        position: absolute;
+        top: -85px;
+        left: 0;
+        width: 200%;
+        height: 90px;
+    }
+
+    .wave-svg {
+        width: 100%;
+        height: 90px;
+    }
+
+    .wave-svg path {
+        fill: currentColor;
+    }
+
+    /* Color de cada ola */
+
+    .liquid-blue .wave-track {
+        color: #f87171;
+    }
+
+    .liquid-cyan .wave-track {
+        color: #fbbf24;
+    }
+
+    .liquid-front .wave-track {
+        color: #22d3ee;
+    }
+
+    /* =========================
+    ANIMACIONES
+    ========================= */
+
+    .wave-track-1 {
+        animation: waveSlideLeft 14s linear infinite;
+    }
+
+    .wave-track-2 {
+        animation: waveSlideRight 10s linear infinite;
+    }
+
+    .wave-track-3 {
+        animation: waveSlideLeft 6s linear infinite;
+    }
+
+    @keyframes waveSlideLeft {
+        from {
+            transform: translateX(0);
+        }
+        to {
+            transform: translateX(-50%);
+        }
+    }
+
+    @keyframes waveSlideRight {
+        from {
+            transform: translateX(-50%);
+        }
+        to {
+            transform: translateX(0);
+        }
+    }
+</style>
 
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 
@@ -290,94 +498,137 @@ function dibujarTopologia(data) {
     }
 }
 
-function pollProgress() {
-    fetch('{% url "get_progress" %}')
-        .then(r => r.json())
-        .then(data => {
-            console.log("Polling progress:", data);
-            const loadingText = document.getElementById('loadingText');
-            
-            if (data.status === 'running') {
-                if (loadingText) loadingText.innerText = data.message || 'Analizando red...';
-                setTimeout(pollProgress, 1000);
-            } else {
-                // Si el estado es 'finished', 'error', 'idle' o cualquier otro que no sea 'running'
-                console.log("Estado final detectado:", data.status);
-                
-                fetch('{% url "get_activos" %}')
-                    .then(r => r.json())
-                    .then(devices => {
-                        dibujarTopologia(devices);
-                    })
-                    .catch(err => console.error("Error al obtener activos:", err))
-                    .finally(() => {
-                        setLoading(false); // SIEMPRE ocultar al final
-                    });
+const scanBtn = document.getElementById('actualizarTopologia');
+ const liquidContainer = document.getElementById('liquid-fill-container');
+ const liquidLayer1 = document.getElementById('liquid-layer-1');
+ const liquidLayer2 = document.getElementById('liquid-layer-2');
+ const liquidLayer3 = document.getElementById('liquid-layer-3');
+ const topoProgressInfo = document.getElementById('topoProgressInfo');
+ const topoStatus = document.getElementById('topoStatus');
+ const topoTimer = document.getElementById('topoTimer');
+ let isScanningTopo = false;
+
+ function formatTime(seconds) {
+     if (!seconds || seconds < 0) return "--:--";
+     const mins = Math.floor(seconds / 60);
+     const secs = Math.floor(seconds % 60);
+     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+ }
+
+ function setTopoBtnState(scanning) {
+     isScanningTopo = scanning;
+     const icon = document.getElementById("syncIcon");
+     const text = document.getElementById("btnText");
+     
+     if (scanning) {
+         scanBtn.classList.remove('from-green-500', 'to-cyan-600');
+         scanBtn.classList.add('from-red-500', 'to-red-700');
+         if (icon) icon.className = "fa-solid fa-xmark";
+         if (text) text.innerText = "Cancelar";
+         liquidContainer.classList.remove('opacity-0');
+     } else {
+         scanBtn.classList.add('from-green-500', 'to-cyan-600');
+         scanBtn.classList.remove('from-red-500', 'to-red-700');
+         if (icon) icon.className = "fa-solid fa-sync-alt";
+         if (text) text.innerText = "Actualizar topología";
+         liquidContainer.classList.add('opacity-0');
+         scanBtn.disabled = false;
+     }
+ }
+
+ function updateTopoProgress() {
+     fetch('{% url "scan_status" %}')
+         .then(res => res.json())
+         .then(data => {
+             if (data.status === 'running' || data.status === 'cancelling') {
+                 setTopoBtnState(true);
+                 topoProgressInfo.classList.remove('hidden');
+                 
+                 const p = data.percentage || 0;
+
+                 liquidLayer1.style.height = `${Math.min(100, p + 16)}%`;
+                 liquidLayer2.style.height = `${Math.min(100, p + 8)}%`;
+                 liquidLayer3.style.height = `${p}%`;
+                 
+                 topoStatus.innerText = data.status === 'cancelling' ? 'CANCELANDO...' : (data.message || 'Analizando red...');
+                 topoTimer.innerText = `${formatTime(data.elapsed_time)} | Est: ${formatTime(data.estimated_remaining)}`;
+                 
+                 setTimeout(updateTopoProgress, 1000);
+             } else {
+                if (isScanningTopo && data.status === 'finished') {
+                    topoStatus.innerText = '¡COMPLETADO!';
+
+                    setTopoBtnState(false);
+                    topoProgressInfo.classList.add('hidden');
+
+                    liquidLayer1.style.height = '0%';
+                    liquidLayer2.style.height = '0%';
+                    liquidLayer3.style.height = '0%';
+
+                    fetch('{% url "get_activos" %}')
+                        .then(r => r.json())
+                        .then(devices => dibujarTopologia(devices));
+
+                    return;
+                }
+                if (
+                    data.status === 'cancelled'
+                    ||
+                    data.status === 'error'
+                    ||
+                    data.status === 'idle'
+                    ||
+                    data.status === 'not_running'
+                ) {
+                    setTopoBtnState(false);
+                    topoProgressInfo.classList.add('hidden');
+                    liquidLayer1.style.height = '0%';
+                    liquidLayer2.style.height = '0%';
+                    liquidLayer3.style.height = '0%';
+
+                    topoStatus.innerText =
+                        data.status === 'cancelled'
+                        ? 'CANCELADO'
+                        : '';
+                    return;
+                }
+            }
+         });
+    }
+
+ scanBtn.addEventListener('click', function() {
+     if (isScanningTopo) {
+         if (!confirm('¿Seguro que quieres cancelar?')) return;
+         fetch('{% url "cancel_scan" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
             }
         })
-        .catch(err => {
-            console.error("Error en polling:", err);
-            // Si hay error de red persistente, ocultar tras unos reintentos o inmediatamente
-            setLoading(false); 
-        });
-}
-
-function setLoading(isLoading) {
-    const btn = document.getElementById("actualizarTopologia");
-    const icon = document.getElementById("syncIcon");
-    const text = document.getElementById("btnText");
-    const overlay = document.getElementById("loadingOverlay");
-
-    if (isLoading) {
-        btn.disabled = true;
-        icon.classList.add("fa-spin");
-        text.innerText = "Escaneando...";
-        overlay.style.display = "flex";
-        // Asegurar que el overlay sea visible
-        overlay.classList.remove("hidden");
-    } else {
-        btn.disabled = false;
-        icon.classList.remove("fa-spin");
-        text.innerText = "Actualizar topología";
-        overlay.style.display = "none";
-        overlay.classList.add("hidden");
-        // Forzar limpieza si el mapa sigue borroso por algún CSS residual
-        document.getElementById("network").style.filter = "none";
-    }
-}
-
-// Asignar evento al botón de cierre de emergencia
-document.getElementById("closeOverlayBtn").addEventListener("click", function(e) {
-    e.preventDefault();
-    setLoading(false);
-});
-
-function actualizar() {
-    setLoading(true);
-    fetch("{% url 'topologia_datos' %}")
         .then(r => r.json())
-        .then(res => {
-            pollProgress();
-            if (res.data) dibujarTopologia(res.data);
-        })
-        .catch(() => {
-            setLoading(false);
+        .then(data => {
+            topoStatus.innerText = 'CANCELANDO...';
+            setTimeout(updateTopoProgress, 500);
         });
-}
+         return;
+     }
+
+     fetch('{% url "scan" %}', {
+         method: 'POST',
+         headers: {
+             'X-CSRFToken': '{{ csrf_token }}',
+             'Content-Type': 'application/json'
+         },
+         body: JSON.stringify({})
+     }).then(() => updateTopoProgress());
+ });
 
 /* CARGA INICIAL */
-fetch('{% url "get_progress" %}')
+fetch('{% url "get_activos" %}')
     .then(r => r.json())
-    .then(data => {
-        if (data.status === 'running') {
-            setLoading(true);
-            pollProgress();
-        }
-        fetch('{% url "get_activos" %}')
-            .then(r => r.json())
-            .then(devices => dibujarTopologia(devices));
-    });
+    .then(devices => dibujarTopologia(devices));
 
-document.getElementById("actualizarTopologia").addEventListener("click", actualizar);
+// Verificar si ya hay uno corriendo al cargar
+updateTopoProgress();
 </script>
 {% endblock %}

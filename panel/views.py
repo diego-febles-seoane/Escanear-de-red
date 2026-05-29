@@ -57,7 +57,9 @@ def logout_view(request):
 scan_progress = {
     'percentage': 0,
     'status': 'idle',
-    'message': ''
+    'message': '',
+    'start_time': None,
+    'cancelled': False
 }
 
 _mongo_session_data = {}
@@ -138,6 +140,20 @@ def index(request):
 @mongo_login_required
 @csrf_exempt
 @require_POST
+def cancel_scan(request):
+    global scan_progress
+    print("CANCEL SCAN PULSADO")
+    if scan_progress['status'] == 'running':
+        scan_progress['cancelled'] = True
+        scan_progress['status'] = 'cancelling'
+        scan_progress['message'] = 'Cancelando escaneo...'
+        print(scan_progress)
+        return JsonResponse({'status': 'cancelling'})
+    return JsonResponse({'status': 'not_running'})
+
+@mongo_login_required
+@csrf_exempt
+@require_POST
 def scan(request):
     set_mongo_session_data(
         request.session.get('mongo_user'),
@@ -153,7 +169,9 @@ def scan(request):
     scan_progress = {
         'percentage': 0,
         'status': 'running',
-        'message': 'Iniciando observación pasiva...'
+        'message': 'Iniciando observación pasiva...',
+        'start_time': datetime.now().timestamp(),
+        'cancelled': False
     }
     
     def run_scan(m_user, m_pass, m_host):
@@ -167,12 +185,18 @@ def scan(request):
                 raise Exception("No se pudo inicializar el servicio de escaneo")
             
             def progress_callback(percentage, message):
+                if scan_progress.get('cancelled'):
+                    raise Exception("Escaneo cancelado por el usuario")
+
                 scan_progress['percentage'] = percentage
                 scan_progress['message'] = message
 
             # Realizar observación pasiva sin enviar paquetes
             ids = scanner.escanar_y_guardar(progress_callback=progress_callback)
             
+            if scan_progress['cancelled']:
+                raise Exception("Escaneo cancelado por el usuario")
+
             scan_progress['percentage'] = 100
             scan_progress['status'] = 'finished'
             if ids:
@@ -181,9 +205,14 @@ def scan(request):
                 scan_progress['message'] = 'Finalizado. No se detectó actividad reciente.'
                 
         except Exception as e:
-            scan_progress['status'] = 'error'
-            scan_progress['message'] = f'Error: {str(e)}'
-            print(f"Scan error: {e}")
+            if str(e) == "Escaneo cancelado por el usuario":
+                scan_progress['status'] = 'cancelled'
+                scan_progress['message'] = 'Escaneo cancelado'
+                scan_progress['percentage'] = 0
+            else:
+                scan_progress['status'] = 'error'
+                scan_progress['message'] = f'Error: {str(e)}'
+                print(f"Scan error: {e}")
     
     m_user = request.session.get('mongo_user')
     m_pass = request.session.get('mongo_password')
@@ -196,9 +225,33 @@ def scan(request):
     return JsonResponse({'status': 'started'})
 
 @mongo_login_required
-def get_progress(request):
+def get_scan_status(request):
     global scan_progress
-    return JsonResponse(scan_progress)
+    
+    elapsed_time = 0
+    estimated_remaining = 0
+    
+    if scan_progress['start_time'] and scan_progress['status'] == 'running':
+        elapsed_time = datetime.now().timestamp() - scan_progress['start_time']
+        if scan_progress['percentage'] > 5: # Esperar a tener algo de progreso para estimar
+            total_estimated = (elapsed_time * 100) / scan_progress['percentage']
+            # El tiempo restante es el total estimado menos el ya transcurrido
+            estimated_remaining = max(0, total_estimated - elapsed_time)
+            
+            # Limitar cambios bruscos en la estimación para que sea más estable
+            if 'last_estimate' in scan_progress:
+                # Suavizado: 80% anterior, 20% nuevo
+                estimated_remaining = (scan_progress['last_estimate'] * 0.8) + (estimated_remaining * 0.2)
+            
+            scan_progress['last_estimate'] = estimated_remaining
+            
+    return JsonResponse({
+        'percentage': scan_progress['percentage'],
+        'status': scan_progress['status'],
+        'message': scan_progress['message'],
+        'elapsed_time': int(elapsed_time),
+        'estimated_remaining': int(estimated_remaining)
+    })
 
 @mongo_login_required
 def export_data(request):

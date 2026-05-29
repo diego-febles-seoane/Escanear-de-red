@@ -30,7 +30,7 @@
         display: flex;
         align-items: flex-end;
         gap: 20px;
-        padding: 20px;
+        padding: 35px;
         background: rgba(255, 255, 255, 0.05);
         border-radius: 12px;
     }
@@ -71,7 +71,7 @@
         <h2 class="text-3xl font-bold mb-2">Dashboard de Dispositivos</h2>
         <p class="text-gray-400 text-sm">Resultados del escaneo de red</p>
     </div>
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-4" id="scan-actions-container">
         <a href="{% url 'export_pdf_documentacion' %}" class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all text-xs border-cyan-500/30">
             <i class="fa-solid fa-book text-cyan-400"></i> Documentación PDF
         </a>
@@ -79,37 +79,36 @@
             <i class="fa-solid fa-file-pdf text-red-500"></i> Reporte Red
         </a>
         <a href="{% url 'export_csv' %}" class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all text-xs">
-            <i class="fa-solid fa-file-csv text-green-400"></i> CSV
+            <i class="fa-solid fa-file-csv text-green-500"></i> CSV
         </a>
         <a href="{% url 'export_json' %}"
             class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all text-xs">
-            <i class="fa-solid fa-file-code text-blue-400"></i> JSON
+            <i class="fa-solid fa-file-code text-blue-500"></i> JSON
         </a>
         <a href="{% url 'export_excel' %}"
             class="glass-card rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-all text-xs">
-            <i class="fa-solid fa-file-excel text-green-500"></i> Excel
+            <i class="fa-solid fa-file-excel text-green-600"></i> Excel
         </a>
-        <div class="flex gap-2 bg-white/5 p-1 rounded-xl border border-white/10">
-            <button type="button" id="scanBtn"
-                class="bg-gradient-to-r from-green-500 to-cyan-600 px-6 py-2 rounded-lg font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all text-xs">
-                <i class="fa-solid fa-eye"></i> Observar Red (Pasivo)
-            </button>
-        </div>
+        <button type="button" id="scanBtn"
+            class="bg-gradient-to-r from-green-500 to-cyan-600 px-6 py-2 rounded-lg font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all text-xs flex items-center gap-2">
+            <i class="fa-solid fa-search" id="scanIcon"></i> <span id="scanText">Escanear</span>
+        </button>
     </div>
 </div>
 
 <!-- Barra de Progreso -->
-<div class="mb-8 d-none" id="progress-container">
-    <div class="glass-card rounded-2xl p-6">
-        <div class="flex justify-between mb-4">
-            <span class="font-semibold" id="progress-status">Escaneando red...</span>
-            <span class="font-bold" id="progress-percent">0%</span>
+<div id="progressContainer" class="mt-12 mb-12 d-none animate-fadeIn">
+    <div class="flex justify-between items-center mb-4">
+        <div class="flex flex-col">
+            <span id="progressStatus" class="text-sm font-medium text-cyan-400 uppercase tracking-widest">Iniciando observación...</span>
+            <span id="scanTimer" class="text-[10px] text-gray-500 mt-1 font-mono">Tiempo: 00:00 | Restante: --:--</span>
         </div>
-        <div class="h-3 bg-white/10 rounded-full overflow-hidden">
-            <div id="main-progress-bar"
-                class="h-full bg-gradient-to-r from-green-500 to-cyan-600 transition-all duration-300"
-                style="width: 0%;"></div>
+        <div class="flex items-center gap-4">
+            <span id="progressPercent" class="text-2xl font-bold text-white">0%</span>
         </div>
+    </div>
+    <div class="h-3 w-full bg-white/5 rounded-full overflow-hidden border border-white/10 p-[2px]">
+        <div id="progressBar" class="h-full bg-gradient-to-r from-cyan-500 to-green-500 rounded-full transition-all duration-500 shadow-[0_0_15px_rgba(6,182,212,0.5)]" style="width: 0%"></div>
     </div>
 </div>
 
@@ -158,10 +157,10 @@
 
 <script>
     const scanBtn = document.getElementById('scanBtn');
-    const progressContainer = document.getElementById('progress-container');
-    const progressBar = document.getElementById('main-progress-bar');
-    const progressPercent = document.getElementById('progress-percent');
-    const progressStatus = document.getElementById('progress-status');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const progressPercent = document.getElementById('progressPercent');
+    const progressStatus = document.getElementById('progressStatus');
     const tableBody = document.getElementById('historial-tbody');
     const paginationControls = document.getElementById('pagination-controls');
     const paginationInfo = document.getElementById('pagination-info');
@@ -170,43 +169,59 @@
     let currentPage = 1;
     const recordsPerPage = 15;
 
-    function updateProgress() {
-        fetch('{% url "get_progress" %}')
-            .then(response => response.json())
-            .then(data => {
-                const percentage = data.percentage;
-                progressBar.style.width = percentage + '%';
-                progressPercent.innerText = percentage + '%';
-                progressStatus.innerText = data.message || 'Escaneando...';
+    const scanIcon = document.getElementById('scanIcon');
+    const scanText = document.getElementById('scanText');
+    let isScanning = false;
 
-                if (data.status === 'running') {
-                    setTimeout(updateProgress, 1000);
-                } else if (data.status === 'finished') {
-                    progressStatus.innerText = '¡Escaneo completado!';
-                    fetchData();
-                    fetchStats();
-                    setTimeout(() => {
-                        progressContainer.classList.add('d-none');
-                        progressBar.style.width = '0%';
-                        progressPercent.innerText = '0%';
-                    }, 3000);
-                    scanBtn.disabled = false;
-                    scanBtn.innerHTML = '<i class="fa-solid fa-search"></i> Escanear';
-                } else if (data.status === 'error') {
-                    progressStatus.innerText = data.message;
-                    progressStatus.classList.add('text-red-500');
-                    scanBtn.disabled = false;
-                    scanBtn.innerHTML = '<i class="fa-solid fa-search"></i> Escanear';
-                }
-            });
+    function formatTime(seconds) {
+        if (!seconds || seconds < 0) return "--:--";
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
-    scanBtn.addEventListener('click', function () {
+    function setScanState(scanning) {
+        isScanning = scanning;
+        if (scanning) {
+            scanBtn.classList.remove('from-green-500', 'to-cyan-600');
+            scanBtn.classList.add('from-red-500', 'to-red-700');
+            scanIcon.className = 'fa-solid fa-xmark';
+            scanText.innerText = 'CANCELAR';
+        } else {
+            scanBtn.classList.add('from-green-500', 'to-cyan-600');
+            scanBtn.classList.remove('from-red-500', 'to-red-700');
+            scanIcon.className = 'fa-solid fa-search';
+            scanText.innerText = 'Escanear';
+            scanBtn.disabled = false;
+        }
+    }
+
+    scanBtn.addEventListener('click', function() {
+        if (isScanning) {
+            if (!confirm('¿Seguro que quieres cancelar el escaneo?')) return;
+
+            fetch('{% url "cancel_scan" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'cancelling') {
+                    progressStatus.innerText = 'CANCELANDO...';
+
+                    setTimeout(updateProgress, 500);
+                }
+            });
+
+            return;
+        }
+
         progressContainer.classList.remove('d-none');
         progressStatus.classList.remove('text-red-500');
         progressStatus.innerText = 'Iniciando observación...';
-        scanBtn.disabled = true;
-        scanBtn.innerHTML = '<span class="animate-spin mr-2"><i class="fa-solid fa-spinner"></i></span>...';
+        setScanState(true);
 
         fetch('{% url "scan" %}', {
             method: 'POST',
@@ -221,6 +236,41 @@
                 updateProgress();
             });
     });
+
+    function updateProgress() {
+        fetch('{% url "scan_status" %}')
+            .then(response => response.json())
+            .then(data => {
+                progressBar.style.width = data.percentage + '%';
+                progressPercent.innerText = data.percentage + '%';
+                progressStatus.innerText = data.message;
+                
+                // Actualizar cronómetro
+                scanTimer.innerText = `Tiempo: ${formatTime(data.elapsed_time)} | Restante: ${formatTime(data.estimated_remaining)}`;
+
+                if (data.status === 'running') {
+                    setScanState(true);
+                    setTimeout(updateProgress, 1000);
+                } else if (data.status === 'finished') {
+                    progressStatus.innerText = '¡Completado!';
+                    setScanState(false);
+                    setTimeout(() => {
+                        progressContainer.classList.add('d-none');
+                        progressBar.style.width = '0%';
+                        progressPercent.innerText = '0%';
+
+                        fetchData();
+                        fetchStats();
+                    }, 1500);
+                } else if (data.status === 'error' || data.status === 'cancelled') {
+                    progressStatus.innerText = data.message || 'Escaneo detenido';
+                    progressStatus.classList.add('text-red-500');
+                    setScanState(false);
+                }
+            });
+    }
+    // Al cargar, verificar si ya hay un escaneo
+    updateProgress();
 
     function formatFecha(fechaStr) {
         if (!fechaStr || fechaStr === '-') return '-';
