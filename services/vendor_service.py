@@ -61,6 +61,3 @@ class vendor_service:
             time.sleep(1)
 
         return fabricante
-
-
-

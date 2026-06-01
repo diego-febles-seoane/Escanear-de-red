@@ -30,16 +30,116 @@
     </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-    <div class="lg:col-span-3 flex flex-col gap-6">
-        <div class="glass-card rounded-3xl border border-white/10 p-1 relative overflow-hidden flex-1 min-h-[750px]">
-                
-                <!-- 1. MAPA (Base - Ocupa todo el espacio absoluto) -->
-                <div id="network" class="absolute inset-0 bg-[#0a0f18]/95 z-10 transition-opacity duration-500"></div>
+<!-- TARJETAS SUPERIORES -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
 
-                <!-- 2. INUNDACIÓN (Encima del mapa durante el escaneo) -->
-                <div id="liquid-fill-container" class="absolute inset-0 z-20 pointer-events-none opacity-0 transition-opacity duration-500 hidden">
-                <!-- Capa 1 -->
+    <div class="glass-card rounded-2xl p-5 border border-white/10 flex flex-col items-center justify-center relative overflow-hidden">
+        <h3 class="text-lg font-semibold mb-3 text-cyan-400 text-center">
+            Resumen de Activos
+        </h3>
+
+        <div class="text-center">
+            <p class="text-4xl font-bold text-white" id="totalDevices" style="color: var(--text-main) !important;">0</p>
+            <p class="text-gray-400 text-sm">Dispositivos detectados</p>
+        </div>
+    </div>
+
+    <div class="glass-card rounded-2xl p-5 border border-white/10 relative">
+        <h3 class="text-lg font-semibold mb-4 text-cyan-400 text-center">
+            Tipos de Dispositivo
+        </h3>
+
+        <div id="deviceTypeChartContainer" class="chart-container-custom"></div>
+    </div>
+
+    <div class="glass-card rounded-2xl p-5 border border-white/10 relative">
+        <h3 class="text-lg font-semibold mb-4 text-cyan-400 text-center">
+            Top Fabricantes
+        </h3>
+
+        <div id="fabricantesContainer" class="chart-container-custom"></div>
+    </div>
+
+    <div class="glass-card rounded-2xl p-5 border border-white/10 relative">
+        <h3 class="text-lg font-semibold mb-4 text-cyan-400 text-center">
+            Niveles de Riesgo
+        </h3>
+
+        <div id="riesgoContainer" class="chart-container-custom"></div>
+    </div>
+
+</div>
+
+<!-- MAPA + LEYENDA -->
+<div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+
+    <div class="xl:col-span-4 flex flex-col gap-6">
+        <div class="glass-card rounded-3xl border border-white/10 p-1 relative overflow-hidden flex-1 min-h-[650px]">
+
+            <!-- Contenedor del mapa tipo Tetris -->
+            <div id="network" class="absolute inset-0 bg-transparent z-10 transition-opacity duration-500 overflow-y-auto scrollbar-hide">
+                <div id="networkGrid" class="network-grid-layout"></div>
+            </div>
+
+            <!-- Panel de Detalles Lateral -->
+            <div id="nodeDetailPanel" class="absolute top-24 right-6 w-72 glass-card border border-white/10 p-5 z-40 transform translate-x-80 transition-transform duration-500 shadow-2xl" style="background: var(--bg-card-solid);">
+                <div class="flex justify-between items-center mb-4">
+                    <span id="detailIcon" class="text-3xl"></span>
+                    <button onclick="closeDetailPanel()" class="text-gray-500 hover:text-white transition-colors">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <h4 id="detailName" class="text-lg font-bold text-white mb-2 truncate" style="color: var(--text-main);"></h4>
+
+                <div class="space-y-3 text-xs font-monospace">
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-gray-500" style="color: var(--text-muted); font-weight: 600;">IP</span>
+                        <span id="detailIP" class="text-cyan-400 font-bold"></span>
+                    </div>
+
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-gray-500" style="color: var(--text-muted); font-weight: 600;">MAC</span>
+                        <span id="detailMAC" class="text-gray-300" style="color: var(--text-main);"></span>
+                    </div>
+
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-gray-500" style="color: var(--text-muted); font-weight: 600;">FABRICANTE</span>
+                        <span id="detailVendor" class="text-gray-300" style="color: var(--text-main);"></span>
+                    </div>
+
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-gray-500" style="color: var(--text-muted); font-weight: 600;">TIPO</span>
+                        <span id="detailType" class="text-gray-300 italic" style="color: var(--text-main);"></span>
+                    </div>
+
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-gray-500" style="color: var(--text-muted); font-weight: 600;">VECES VISTO</span>
+                        <span id="detailSeen" class="text-gray-300" style="color: var(--text-main);"></span>
+                    </div>
+
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-gray-500" style="color: var(--text-muted); font-weight: 600;">PRIMERA VEZ</span>
+                        <span id="detailFirstSeen" class="text-gray-300 text-right" style="color: var(--text-main);"></span>
+                    </div>
+
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-gray-500" style="color: var(--text-muted); font-weight: 600;">ÚLTIMA VEZ</span>
+                        <span id="detailLastSeen" class="text-gray-300 text-right" style="color: var(--text-main);"></span>
+                    </div>
+
+                    <div class="mt-4 p-3 rounded-lg border border-white/5" style="background: rgba(0,0,0,0.2); border-color: var(--border-color);">
+                        <span class="text-[10px] uppercase font-bold block mb-1" style="color: var(--text-muted);">
+                            NIVEL DE RIESGO
+                        </span>
+                        <span id="detailRisk" class="font-bold text-green-400 text-sm"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenedor de Inundación -->
+            <div id="liquid-fill-container" class="absolute inset-0 z-20 pointer-events-none opacity-0 transition-opacity duration-500 hidden">
+
                 <div id="liquid-layer-1" class="liquid-layer liquid-blue" style="height:0%;">
                     <div class="wave-track wave-track-1">
                         <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
@@ -47,7 +147,7 @@
                         </svg>
                     </div>
                 </div>
-                <!-- Capa 2 -->
+
                 <div id="liquid-layer-2" class="liquid-layer liquid-cyan" style="height:0%; transition-delay:100ms;">
                     <div class="wave-track wave-track-2">
                         <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
@@ -55,7 +155,7 @@
                         </svg>
                     </div>
                 </div>
-                <!-- Capa 3 -->
+
                 <div id="liquid-layer-3" class="liquid-layer liquid-front" style="height:0%; transition-delay:200ms;">
                     <div class="wave-track wave-track-3">
                         <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
@@ -63,61 +163,234 @@
                         </svg>
                     </div>
                 </div>
+
             </div>
 
-            <!-- 3. TÍTULOS (Siempre al frente) -->
-            <div class="p-6 flex justify-between items-center border-b border-white/5 absolute top-0 left-0 w-full z-30 pointer-events-none">
-                <div class="header-readable-box pointer-events-auto">
-                    <h3 class="text-2xl font-bold text-white flex items-center gap-3">
-                        <i class="fa-solid fa-network-wired text-cyan-400"></i>
-                        Mapa de Red
-                    </h3>
-                    <p class="text-gray-300 text-xs mt-1">Visualización de nodos y conexiones activas</p>
+            <!-- Títulos -->
+            <div class="p-6 flex justify-between items-center absolute top-0 left-0 w-full z-30 pointer-events-none">
+                <div class="header-readable-box pointer-events-auto flex items-center gap-5">
+                    <div>
+                        <h3 class="text-2xl font-bold text-white flex items-center gap-3">
+                            <i class="fa-solid fa-network-wired text-cyan-400"></i>
+                            Mapa de Red
+                        </h3>
+                        <p class="text-gray-300 text-xs mt-1">
+                            Visualización de nodos y conexiones activas
+                        </p>
+                    </div>
+
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                        <input
+                            id="deviceSearch"
+                            type="text"
+                            placeholder="Buscar..."
+                            class="w-56 pl-8 pr-3 py-2 rounded-xl text-xs border border-white/10 bg-black/20 backdrop-blur-md focus:outline-none focus:border-cyan-400"
+                        >
+                    </div>
                 </div>
+
                 <div id="topoProgressInfo" class="hidden flex flex-col items-end mr-4 header-readable-box pointer-events-auto">
                     <span id="topoStatus" class="text-[10px] text-cyan-400 font-bold uppercase tracking-tighter">Observando...</span>
                     <span id="topoTimer" class="text-[10px] text-gray-500 font-mono">00:00 | Est: --:--</span>
                 </div>
             </div>
+
         </div>
     </div>
 
-    <!-- Gráficos de Dispositivos -->
-    <div class="lg:col-span-1 space-y-6">
+    <div class="xl:col-span-1">
         <div class="glass-card rounded-2xl p-6 border border-white/10 relative">
-            <h3 class="text-xl font-semibold mb-6 text-cyan-400 text-center">Tipos de Dispositivo</h3>
-            <div id="deviceTypeChartContainer" class="chart-container-custom">
-                <!-- Barras horizontales inyectadas por JS -->
-            </div>
-            <!-- Eliminado el div chartLegend ya que los datos van en las filas -->
-        </div>
+            <h3 class="text-xl font-semibold mb-6 text-cyan-400 text-center">
+                Leyenda
+            </h3>
 
-        <div class="glass-card rounded-2xl p-6 border border-white/10 flex flex-col items-center justify-center relative overflow-hidden">
-            <h3 class="text-xl font-semibold mb-4 text-cyan-400 text-center">Resumen de Activos</h3>
-            <div class="text-center">
-                <p class="text-4xl font-bold text-white" id="totalDevices">0</p>
-                <p class="text-gray-400 text-sm">Dispositivos detectados</p>
-            </div>
+            <div id="legendContainer" class="space-y-3"></div>
         </div>
     </div>
+
 </div>
 
 <style>
     .header-readable-box {
-        background: rgba(10, 15, 24, 0.78);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(12px);
+        background: var(--bg-card-solid);
+        border: 1px solid var(--border-color);
+        backdrop-filter: var(--glass-blur);
         border-radius: 18px;
         padding: 14px 18px;
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+    }
+
+    .network-grid-layout {
+        padding: 125px 24px 28px 24px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        align-items: start;
+        min-height: 100%;
+    }
+
+    .topology-group-card {
+        border-radius: 24px;
+        padding: 14px;
+        min-height: 145px;
+        border: 2px solid transparent;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.22);
+        position: relative;
+        overflow: hidden;
+    }
+    .topology-group-card.hidden-group {
+        display: none;
+    }
+
+    .topology-device-tile.hidden-device {
+        display: none;
+    }
+
+    .topology-group-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at top left, rgba(255,255,255,0.22), transparent 35%);
+        pointer-events: none;
+    }
+
+    .topology-group-header {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .topology-group-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+    }
+
+    .topology-group-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.18);
+        border: 1px solid rgba(255,255,255,0.16);
+        flex-shrink: 0;
+    }
+
+    .topology-group-name {
+        font-size: 13px;
+        font-weight: 800;
+        color: #fff;
+        line-height: 1.15;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .topology-group-count {
+        font-size: 10px;
+        color: rgba(255,255,255,0.78);
+        margin-top: 2px;
+    }
+
+    .topology-group-badge {
+        font-size: 11px;
+        font-weight: 800;
+        color: #fff;
+        background: rgba(0,0,0,0.20);
+        border: 1px solid rgba(255,255,255,0.16);
+        border-radius: 999px;
+        padding: 4px 9px;
+        flex-shrink: 0;
+    }
+
+    .topology-device-grid {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+        gap: 8px;
+    }
+
+    .topology-device-tile {
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(0,0,0,0.22);
+        border-radius: 16px;
+        padding: 8px;
+        min-height: 70px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        cursor: pointer;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+        transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .topology-device-tile:hover {
+        transform: translateY(-3px) scale(1.02);
+        background: rgba(255,255,255,0.16);
+        border-color: rgba(255,255,255,0.35);
+        box-shadow: 0 10px 22px rgba(0,0,0,0.25);
+    }
+
+    .topology-device-icon {
+        font-size: 15px;
+        line-height: 1;
+        margin-bottom: 6px;
+    }
+    #deviceSearch {
+        color: var(--text-main);
+    }
+
+    #deviceSearch::placeholder {
+        color: var(--text-muted);
+    }
+
+    .topology-device-name {
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.15;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .topology-device-ip {
+        color: rgba(255,255,255,0.72);
+        font-size: 9px;
+        margin-top: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-family: monospace;
+    }
+
+    .topology-empty-state {
+        grid-column: 1 / -1;
+        min-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        border: 1px dashed var(--border-color);
+        border-radius: 24px;
+        background: rgba(255,255,255,0.03);
     }
     
-    /* Estilos para el gráfico de barras HORIZONTALES personalizado */
     .chart-container-custom {
         display: flex;
         flex-direction: column;
-        gap: 15px;
-        padding: 10px 5px;
+        gap: 10px;
+        padding: 6px 2px;
         background: transparent;
         border-radius: 16px;
         margin-bottom: 0px;
@@ -127,19 +400,19 @@
         width: 100%;
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 5px;
     }
 
     .chart-info-custom {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 11px;
+        font-size: 10px;
     }
 
     .chart-bar-wrapper {
         width: 100%;
-        height: 24px;
+        height: 18px;
         background: rgba(255, 255, 255, 0.05);
         border-radius: 6px;
         overflow: hidden;
@@ -147,24 +420,25 @@
 
     .chart-bar-custom {
         height: 100%;
-        width: 0%; /* Inicia en 0 para animación */
+        width: 0%;
         border-radius: 20px;
         transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
     }
 
     .chart-label-custom {
-        color: #9ca3af;
-        font-weight: 500;
+        color: var(--text-main);
+        font-weight: 600;
+        opacity: 0.9;
     }
 
     .chart-value-custom {
         font-weight: bold;
-        color: white;
-        background: rgba(255, 255, 255, 0.1);
-        padding: 2px 8px;
+        color: var(--text-main);
+        background: var(--border-color);
+        padding: 1px 7px;
         border-radius: 10px;
-        font-size: 10px;
+        font-size: 9px;
     }
 
     .liquid-layer {
@@ -173,52 +447,26 @@
         bottom: 0;
         width: 100%;
         overflow: visible;
-        transition: height 1000ms ease-in-out;
-    }
-    #liquid-layer-1 {
-        z-index: 21;
-    }
-    #liquid-layer-2 {
-        z-index: 22;
-    }
-    #liquid-layer-3 {
-        z-index: 23;
-    }
 
-    /* =========================
-    COLORES
-    ========================= */
+        transition-property: height !important;
+        transition-duration: 1000ms !important;
+        transition-timing-function: ease-in-out !important;
+    }
+    #liquid-layer-1 { z-index: 21; }
+    #liquid-layer-2 { z-index: 22; }
+    #liquid-layer-3 { z-index: 23; }
 
     .liquid-blue {
-        background: linear-gradient(
-            to top,
-            #7f1d1d 0%,
-            #dc2626 60%,
-            #f87171 100%
-        );
+        background: linear-gradient(to top, #7f1d1d 0%, #dc2626 60%, #f87171 100%);
     }
 
     .liquid-cyan {
-        background: linear-gradient(
-            to top,
-            #78350f 0%,
-            #d97706 60%,
-            #fbbf24 100%
-        );
+        background: linear-gradient(to top, #78350f 0%, #d97706 60%, #fbbf24 100%);
     }
 
     .liquid-front {
-        background: linear-gradient(
-            to top,
-            #155e75 0%,
-            #06b6d4 60%,
-            #22d3ee 100%
-        );
+        background: linear-gradient(to top, #155e75 0%, #06b6d4 60%, #22d3ee 100%);
     }
-
-    /* =========================
-    OLAS
-    ========================= */
 
     .wave-track {
         position: absolute;
@@ -237,69 +485,152 @@
         fill: currentColor;
     }
 
-    /* Color de cada ola */
+    .liquid-blue .wave-track { color: #f87171; }
+    .liquid-cyan .wave-track { color: #fbbf24; }
+    .liquid-front .wave-track { color: #22d3ee; }
 
-    .liquid-blue .wave-track {
-        color: #f87171;
-    }
-
-    .liquid-cyan .wave-track {
-        color: #fbbf24;
-    }
-
-    .liquid-front .wave-track {
-        color: #22d3ee;
-    }
-
-    /* =========================
-    ANIMACIONES
-    ========================= */
-
-    .wave-track-1 {
-        animation: waveSlideLeft 14s linear infinite;
-    }
-
-    .wave-track-2 {
-        animation: waveSlideRight 10s linear infinite;
-    }
-
-    .wave-track-3 {
-        animation: waveSlideLeft 6s linear infinite;
-    }
+    .wave-track-1 { animation: waveSlideLeft 14s linear infinite; }
+    .wave-track-2 { animation: waveSlideRight 10s linear infinite; }
+    .wave-track-3 { animation: waveSlideLeft 6s linear infinite; }
 
     @keyframes waveSlideLeft {
-        from {
-            transform: translateX(0);
-        }
-        to {
-            transform: translateX(-50%);
-        }
+        from { transform: translateX(0); }
+        to { transform: translateX(-50%); }
     }
 
     @keyframes waveSlideRight {
-        from {
-            transform: translateX(-50%);
-        }
-        to {
-            transform: translateX(0);
-        }
+        from { transform: translateX(-50%); }
+        to { transform: translateX(0); }
     }
 </style>
 
-<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-
 <script>
 let network = null;
-let nodes = new vis.DataSet();
-let edges = new vis.DataSet();
+let nodes = null;
+let edges = null;
 let deviceChart = null;
-let portsChart = null;
+
+const DEVICE_THEME = {
+    'router': { hex: '#10b981', grad: 'linear-gradient(to right, #10b981, #34d399)', border: '#047857' },
+    'gateway': { hex: '#10b981', grad: 'linear-gradient(to right, #10b981, #34d399)', border: '#047857' },
+    'switch': { hex: '#10b981', grad: 'linear-gradient(to right, #10b981, #34d399)', border: '#047857' },
+    'impresora': { hex: '#ef4444', grad: 'linear-gradient(to right, #ef4444, #f87171)', border: '#991b1b' },
+    'windows': { hex: '#3b82f6', grad: 'linear-gradient(to right, #3b82f6, #60a5fa)', border: '#1d4ed8' },
+    'ssh': { hex: '#8b5cf6', grad: 'linear-gradient(to right, #8b5cf6, #a78bfa)', border: '#6d28d9' },
+    'servidor': { hex: '#06b6d4', grad: 'linear-gradient(to right, #06b6d4, #22d3ee)', border: '#0e7490' },
+    'ordenador': { hex: '#06b6d4', grad: 'linear-gradient(to right, #06b6d4, #22d3ee)', border: '#0e7490' },
+    'movil': { hex: '#f59e0b', grad: 'linear-gradient(to right, #f59e0b, #fbbf24)', border: '#b45309' },
+    'cámara': { hex: '#ec4899', grad: 'linear-gradient(to right, #ec4899, #f472b6)', border: '#be185d' },
+    'seguridad': { hex: '#ec4899', grad: 'linear-gradient(to right, #ec4899, #f472b6)', border: '#be185d' },
+    'multicast': { hex: '#6366f1', grad: 'linear-gradient(to right, #6366f1, #818cf8)', border: '#4338ca' },
+    'desconocido': { hex: '#9ca3af', grad: 'linear-gradient(to right, #9ca3af, #d1d5db)', border: '#6b7280' }
+};
+
+const DYNAMIC_PALETTE = [
+    { hex: '#06b6d4', grad: 'linear-gradient(to right, #06b6d4, #22d3ee)', border: '#0e7490' },
+    { hex: '#10b981', grad: 'linear-gradient(to right, #10b981, #34d399)', border: '#047857' },
+    { hex: '#8b5cf6', grad: 'linear-gradient(to right, #8b5cf6, #a78bfa)', border: '#6d28d9' },
+    { hex: '#f59e0b', grad: 'linear-gradient(to right, #f59e0b, #fbbf24)', border: '#b45309' },
+    { hex: '#ef4444', grad: 'linear-gradient(to right, #ef4444, #f87171)', border: '#991b1b' },
+    { hex: '#ec4899', grad: 'linear-gradient(to right, #ec4899, #f472b6)', border: '#be185d' },
+    { hex: '#6366f1', grad: 'linear-gradient(to right, #6366f1, #818cf8)', border: '#4338ca' },
+    { hex: '#14b8a6', grad: 'linear-gradient(to right, #14b8a6, #2dd4bf)', border: '#0f766e' },
+    { hex: '#f97316', grad: 'linear-gradient(to right, #f97316, #fb923c)', border: '#c2410c' },
+    { hex: '#84cc16', grad: 'linear-gradient(to right, #84cc16, #bef264)', border: '#4d7c0f' },
+    { hex: '#a855f7', grad: 'linear-gradient(to right, #a855f7, #c084fc)', border: '#7e22ce' },
+    { hex: '#0ea5e9', grad: 'linear-gradient(to right, #0ea5e9, #38bdf8)', border: '#0369a1' }
+];
+
+const GROUP_THEME_CACHE = {};
+const TYPE_THEME_CACHE = {};
+
+function normalizeType(tipo) {
+    return (tipo || 'desconocido').toLowerCase().trim();
+}
+
+function getThemeForType(tipo) {
+    const t = normalizeType(tipo);
+
+    for (const key in DEVICE_THEME) {
+        if (t.includes(key)) {
+            TYPE_THEME_CACHE[t] = DEVICE_THEME[key];
+            return DEVICE_THEME[key];
+        }
+    }
+
+    if (!TYPE_THEME_CACHE[t]) {
+        const index = Object.keys(TYPE_THEME_CACHE).length;
+        TYPE_THEME_CACHE[t] = DYNAMIC_PALETTE[index % DYNAMIC_PALETTE.length];
+    }
+
+    return TYPE_THEME_CACHE[t];
+}
+
+function getThemeForGroup(grupo) {
+    const key = normalizeType(grupo);
+
+    if (!GROUP_THEME_CACHE[key]) {
+        const index = Object.keys(GROUP_THEME_CACHE).length;
+        GROUP_THEME_CACHE[key] = DYNAMIC_PALETTE[index % DYNAMIC_PALETTE.length];
+    }
+
+    return GROUP_THEME_CACHE[key];
+}
+
+function getHexColorForType(tipo, index) {
+    return getThemeForType(tipo, index).hex;
+}
+
+function getIconForType(tipo) {
+    const t = (tipo || "").toLowerCase();
+    if (t.includes('impresora')) return '🖨️';
+    if (t.includes('windows')) return '💻';
+    if (t.includes('ssh')) return '🔐';
+    if (t.includes('router') || t.includes('gateway')) return '🌐';
+    if (t.includes('switch')) return '🔌';
+    if (t.includes('servidor')) return '🖥️';
+    if (t.includes('ordenador')) return '🖥️';
+    if (t.includes('movil') || t.includes('teléfono')) return '📱';
+    if (t.includes('cámara')) return '📹';
+    if (t.includes('multicast')) return '📡';
+    if (t.includes('fortinet')) return '🛡️';
+    return '⚪';
+}
+
+function normalizarGrupo(tipo) {
+    const t = (tipo || "Desconocido").toLowerCase();
+
+    if (t.includes("ordenador")) return "Ordenadores";
+    if (t.includes("cámara") || t.includes("camara") || t.includes("seguridad")) return "Cámaras / Seguridad";
+    if (t.includes("fortinet")) return "Fortinet";
+    if (t.includes("multicast") || t.includes("red")) return "Red / Multicast";
+    if (t.includes("router") || t.includes("gateway")) return "Routers";
+    if (t.includes("desconocido")) return "Desconocidos";
+
+    return tipo || "Otros";
+}
+
+function agruparPorTipo(data) {
+    const grupos = {};
+
+    data.forEach(device => {
+        const tipo = device.tipo_dispositivo || device.tipo || 'Desconocido';
+        const grupo = normalizarGrupo(tipo);
+
+        if (!grupos[grupo]) {
+            grupos[grupo] = [];
+        }
+
+        grupos[grupo].push(device);
+    });
+
+    return grupos;
+}
 
 function actualizarGrafico(data) {
     const chartContainer = document.getElementById('deviceTypeChartContainer');
     const totalElement = document.getElementById('totalDevices');
     
-    // 1. Procesar Tipos de Dispositivos
     const typeCounts = {};
     data.forEach(d => {
         const type = d.tipo_dispositivo || d.tipo || 'Desconocido';
@@ -309,37 +640,19 @@ function actualizarGrafico(data) {
     const total = data.length;
     totalElement.innerText = total;
 
-    // 2. Renderizar Barras HORIZONTALES
     chartContainer.innerHTML = '';
     const types = Object.keys(typeCounts);
     const counts = Object.values(typeCounts);
     const maxCount = Math.max(...counts, 1);
 
-    // Paleta de colores variada y dinámica
-    const getDynamicColor = (index) => {
-        const colors = [
-            'linear-gradient(to right, #06b6d4, #22d3ee)', // Cyan
-            'linear-gradient(to right, #10b981, #34d399)', // Green
-            'linear-gradient(to right, #8b5cf6, #a78bfa)', // Violet
-            'linear-gradient(to right, #f59e0b, #fbbf24)', // Amber
-            'linear-gradient(to right, #ef4444, #f87171)', // Red
-            'linear-gradient(to right, #6366f1, #818cf8)', // Indigo
-            'linear-gradient(to right, #ec4899, #f472b6)', // Pink
-            'linear-gradient(to right, #f97316, #fb923c)', // Orange
-            'linear-gradient(to right, #14b8a6, #2dd4bf)', // Teal
-            'linear-gradient(to right, #3b82f6, #60a5fa)'  // Blue
-        ];
-        return colors[index % colors.length];
-    };
-
     types.forEach((type, i) => {
         const count = typeCounts[type];
         const widthPercent = (count / maxCount) * 100;
-        const color = getDynamicColor(i);
-        
+        const grupo = normalizarGrupo(type);
+        const theme = getThemeForGroup(grupo);
+        const color = theme.grad;
         const row = document.createElement('div');
         row.className = 'chart-row-custom';
-        
         row.innerHTML = `
             <div class="chart-info-custom">
                 <span class="chart-label-custom">${type}</span>
@@ -349,10 +662,7 @@ function actualizarGrafico(data) {
                 <div class="chart-bar-custom" id="bar-type-${i}" style="background: ${color}; width: 0%;"></div>
             </div>
         `;
-        
         chartContainer.appendChild(row);
-        
-        // Animación de expansión horizontal
         setTimeout(() => {
             const barElement = document.getElementById(`bar-type-${i}`);
             if (barElement) barElement.style.width = widthPercent + '%';
@@ -360,283 +670,319 @@ function actualizarGrafico(data) {
     });
 }
 
-function getIconForType(tipo) {
-    const t = (tipo || "").toLowerCase();
-    // Basado en device_classifier_service.py
-    if (t.includes('impresora')) return '🖨️';
-    if (t.includes('windows')) return '🪟';
-    if (t.includes('ssh')) return '🐚';
-    if (t.includes('router') || t.includes('switch') || t.includes('ap') || t.includes('red')) return '🌐';
-    if (t.includes('servidor web') || t.includes('panel web')) return '🌐';
-    if (t.includes('ordenador')) return '💻';
-    if (t.includes('movil') || t.includes('tablet') || t.includes('apple') || t.includes('samsung')) return '📱';
-    if (t.includes('cámara') || t.includes('seguridad') || t.includes('dahua') || t.includes('hikvision')) return '📸';
-    if (t.includes('multicast') || t.includes('mcast')) return '📡';
-    if (t.includes('desconocido')) return '❓';
-    return '🔌';
+function actualizarEstadisticasExtra(data) {
+    const fabricantesContainer = document.getElementById('fabricantesContainer');
+    const riesgoContainer = document.getElementById('riesgoContainer');
+
+    if (!fabricantesContainer || !riesgoContainer) return;
+
+    const fabricantes = {};
+    const riesgos = { BAJO: 0, MEDIO: 0, ALTO: 0 };
+
+    data.forEach(device => {
+        const fabricante = device.fabricante || 'Desconocido';
+        fabricantes[fabricante] = (fabricantes[fabricante] || 0) + 1;
+
+        const riesgo = (device.riesgo || 'BAJO').toUpperCase();
+
+        if (riesgos[riesgo] !== undefined) {
+            riesgos[riesgo]++;
+        }
+    });
+
+    const topFabricantes = Object.entries(fabricantes)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+
+    fabricantesContainer.innerHTML = '';
+    riesgoContainer.innerHTML = '';
+
+    const maxFabricante = Math.max(...topFabricantes.map(item => item[1]), 1);
+
+    topFabricantes.forEach(([nombre, cantidad], index) => {
+        const widthPercent = (cantidad / maxFabricante) * 100;
+        const theme = DYNAMIC_PALETTE[index % DYNAMIC_PALETTE.length];
+
+        fabricantesContainer.innerHTML += `
+            <div class="chart-row-custom">
+                <div class="chart-info-custom">
+                    <span class="chart-label-custom">${nombre}</span>
+                    <span class="chart-value-custom">${cantidad}</span>
+                </div>
+                <div class="chart-bar-wrapper">
+                    <div class="chart-bar-custom" style="background:${theme.grad}; width:${widthPercent}%;"></div>
+                </div>
+            </div>
+        `;
+    });
+
+    const riesgoThemes = {
+        BAJO: { grad: 'linear-gradient(to right, #10b981, #34d399)' },
+        MEDIO: { grad: 'linear-gradient(to right, #f59e0b, #fbbf24)' },
+        ALTO: { grad: 'linear-gradient(to right, #ef4444, #f87171)' }
+    };
+
+    const maxRiesgo = Math.max(...Object.values(riesgos), 1);
+
+    Object.entries(riesgos).forEach(([nivel, cantidad]) => {
+        const widthPercent = (cantidad / maxRiesgo) * 100;
+        const theme = riesgoThemes[nivel];
+
+        riesgoContainer.innerHTML += `
+            <div class="chart-row-custom">
+                <div class="chart-info-custom">
+                    <span class="chart-label-custom">${nivel}</span>
+                    <span class="chart-value-custom">${cantidad}</span>
+                </div>
+                <div class="chart-bar-wrapper">
+                    <div class="chart-bar-custom" style="background:${theme.grad}; width:${widthPercent}%;"></div>
+                </div>
+            </div>
+        `;
+    });
 }
 
-function getLabel(device, expanded = false) {
-    const nombreFull = device.nombre_dispositivo || "Dispositivo";
-    // Cortamos el nombre para la vista minificada para evitar solapamientos
-    const shortName = nombreFull.length > 12 ? nombreFull.substring(0, 10) + ".." : nombreFull;
-    
-    const ip = device.ip || "-";
-    const mac = device.mac || "-";
-    const riesgo = device.riesgo || "BAJO";
-    const fabricante = device.fabricante || "-";
-    const tipo = device.tipo_dispositivo || "-";
-    const icono = getIconForType(tipo);
+function actualizarLeyenda(data) {
+    const legendContainer = document.getElementById('legendContainer');
 
-    if (!expanded) {
-        // Vista simplificada: SOLO EL ICONO (o icono + nombre muy corto)
-        return `${icono}\n${shortName}`;
+    if (!legendContainer) return;
+
+    const gruposDetectados = {};
+
+    data.forEach(device => {
+        const tipo = device.tipo_dispositivo || device.tipo || 'Desconocido';
+        const grupo = normalizarGrupo(tipo);
+        gruposDetectados[grupo] = true;
+    });
+
+    legendContainer.innerHTML = '';
+
+    Object.keys(gruposDetectados).forEach(grupo => {
+        const theme = getThemeForGroup(grupo);
+
+        legendContainer.innerHTML += `
+            <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center gap-3 min-w-0">
+                    <span class="w-3 h-3 rounded-full inline-block flex-shrink-0" style="background:${theme.hex}; border:1px solid ${theme.border};"></span>
+                    <span class="text-gray-300 truncate">${grupo}</span>
+                </div>
+                <span class="text-gray-500 text-xs ml-2">${getIconForType(grupo)}</span>
+            </div>
+        `;
+    });
+}
+
+function escapeHTML(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+function renderizarTopologiaGrid(data) {
+    const grid = document.getElementById('networkGrid');
+
+    if (!grid) return;
+
+    const grupos = agruparPorTipo(data);
+    const gruposOrdenados = Object.entries(grupos)
+        .sort((a, b) => b[1].length - a[1].length);
+
+    if (gruposOrdenados.length === 0) {
+        grid.innerHTML = `
+            <div class="topology-empty-state">
+                No hay dispositivos detectados todavía.
+            </div>
+        `;
+        return;
     }
 
-    // Vista detallada: Se expande la caja y muestra todo
-    return `${icono} [ DETALLES ]\n` +
-           `------------------------\n` +
-           `DISP: ${nombreFull}\n` +
-           `IP: ${ip}\n` +
-           `MAC: ${mac}\n` +
-           `FAB: ${fabricante}\n` +
-           `TIPO: ${tipo}\n` +
-           `RIESGO: ${riesgo}\n` +
-           `------------------------\n` +
-           `[ CERRAR ]`;
+    grid.innerHTML = gruposOrdenados.map(([grupo, dispositivos]) => {
+        const theme = getThemeForGroup(grupo);
+        const icon = getIconForType(grupo);
+        const safeGroup = escapeHTML(grupo);
+
+        const devicesHTML = dispositivos.map((device, index) => {
+            const deviceName = device.nombre_dispositivo || device.host_name || 'Dispositivo';
+            const ip = device.ip || '-';
+            const mac = device.mac || '';
+            const encoded = encodeURIComponent(JSON.stringify(device));
+
+            return `
+                <button
+                    type="button"
+                    class="topology-device-tile"
+                    data-device="${encoded}"
+                    title="${escapeHTML(deviceName)} - ${escapeHTML(ip)} ${escapeHTML(mac)}"
+                >
+                    <span class="topology-device-icon">${getIconForType(device.tipo_dispositivo || device.tipo || grupo)}</span>
+                    <span class="topology-device-name">${escapeHTML(deviceName)}</span>
+                    <span class="topology-device-ip">${escapeHTML(ip)}</span>
+                </button>
+            `;
+        }).join('');
+
+        return `
+            <section
+                class="topology-group-card"
+                style="background:${theme.grad}; border-color:${theme.border};"
+            >
+                <div class="topology-group-header">
+                    <div class="topology-group-title">
+                        <div class="topology-group-icon">${icon}</div>
+                        <div class="min-w-0">
+                            <div class="topology-group-name">${safeGroup}</div>
+                            <div class="topology-group-count">${dispositivos.length} dispositivos</div>
+                        </div>
+                    </div>
+                    <div class="topology-group-badge">${dispositivos.length}</div>
+                </div>
+
+                <div class="topology-device-grid">
+                    ${devicesHTML}
+                </div>
+            </section>
+        `;
+    }).join('');
+
+    grid.querySelectorAll('.topology-device-tile').forEach(tile => {
+        tile.addEventListener('click', () => {
+            try {
+                const device = JSON.parse(decodeURIComponent(tile.dataset.device));
+                showDetailPanel(device);
+            } catch (error) {
+                console.error('Error abriendo detalle de dispositivo:', error);
+            }
+        });
+    });
 }
 
 function dibujarTopologia(data) {
-    console.log("Dibujando topología con", data.length, "dispositivos");
+    console.log("Dibujando topología grid con", data.length, "dispositivos");
     actualizarGrafico(data);
+    actualizarEstadisticasExtra(data);
+    actualizarLeyenda(data);
+    renderizarTopologiaGrid(data);
+    initSearch();
+}
+
+function formatPanelDate(value) {
+    if (!value || value === '-') return '-';
+
+    const date = new Date(value);
+
+    if (isNaN(date.getTime())) return value;
+
+    return date.toLocaleString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function showDetailPanel(dev) {
+    const panel = document.getElementById('nodeDetailPanel');
+    const icon = getIconForType(dev.tipo_dispositivo || dev.tipo || '');
+
+    document.getElementById('detailIcon').innerText = icon;
+    document.getElementById('detailName').innerText = dev.nombre_dispositivo || dev.host_name || 'Desconocido';
+    document.getElementById('detailIP').innerText = dev.ip || '-';
+    document.getElementById('detailMAC').innerText = dev.mac || '-';
+    document.getElementById('detailVendor').innerText = dev.fabricante || 'Desconocido';
+    document.getElementById('detailType').innerText = (dev.tipo_dispositivo || dev.tipo || 'Desconocido').toUpperCase();
+    document.getElementById('detailSeen').innerText = dev.veces_visto || '-';
+    document.getElementById('detailFirstSeen').innerText = formatPanelDate(dev.primera_vez || dev.primera_vez_conectado || dev.fecha);
+    document.getElementById('detailLastSeen').innerText = formatPanelDate(dev.ultima_vez || dev.ultima_vez_conectado || dev.fecha);
     
-    // 1. Limpiar DataSets
-    nodes.clear();
-    edges.clear();
+    const riskElem = document.getElementById('detailRisk');
+    riskElem.innerText = dev.riesgo || 'BAJO';
+    riskElem.className = `font-bold ${dev.riesgo === 'ALTO' ? 'text-red-400' : 'text-green-400'}`;
 
-    // 2. Nodo Central
-    nodes.add({
-        id: "gateway",
-        label: "GATEWAY / ROUTER",
-        shape: "box",
-        margin: 15,
-        color: {
-            background: '#10b981',
-            border: '#059669',
-            highlight: { background: '#10b981', border: '#059669' }
-        },
-        font: { color: '#ffffff', face: 'monospace', size: 16, align: 'center', bold: true },
-        x: 0, y: 0
-    });
+    panel.classList.remove('translate-x-80');
+}
 
-    // 3. Añadir Nodos de Dispositivos (Filtrando duplicados por ID)
-    const newNodes = [];
-    const newEdges = [];
-    const idsVistos = new Set();
-
-    data.forEach((device, index) => {
-        const nodeId = device.mac || device.ip || `node_${index}`;
-        
-        if (idsVistos.has(nodeId)) return;
-        idsVistos.add(nodeId);
-
-        newNodes.push({
-            id: nodeId,
-            label: getLabel(device),
-            shape: "box", // Usamos box para que el texto esté contenido
-            margin: 10,
-            color: {
-                background: '#1f2937',
-                border: '#374151',
-                highlight: { background: '#111827', border: '#10b981' }
-            },
-            font: { 
-                color: '#e5e7eb', 
-                face: 'monospace', 
-                size: 11, 
-                align: 'center',
-                multi: true // Habilitar multilínea
-            },
-            deviceData: device,
-            isExpanded: false
-        });
-
-        newEdges.push({
-            from: "gateway",
-            to: nodeId,
-            color: { color: 'rgba(255,255,255,0.15)', highlight: '#10b981' },
-            width: 1,
-            length: 100 // Más distancia para evitar que las cajas choquen
-        });
-    });
-
-    nodes.add(newNodes);
-    edges.add(newEdges);
-
-    // 4. Inicializar o Actualizar Red
-    if (!network) {
-        console.log("Creando nueva instancia de Vis.js");
-        const container = document.getElementById("network");
-        const networkData = { nodes: nodes, edges: edges };
-        const options = {
-            physics: {
-                enabled: true,
-                solver: 'forceAtlas2Based',
-                forceAtlas2Based: {
-                    gravitationalConstant: -150, // Más repulsión para separar cajas
-                    centralGravity: 0.03,        
-                    springLength: 150,
-                    springConstant: 0.05,
-                    damping: 0.4,
-                    avoidOverlap: 1              
-                },
-                stabilization: { 
-                    enabled: true,
-                    iterations: 1000,
-                    updateInterval: 100
-                }
-            },
-            interaction: {
-                hover: true,
-                dragNodes: true,
-                dragView: true,
-                zoomView: true
-            },
-            layout: {
-                improvedLayout: true
-            }
-        };
-        network = new vis.Network(container, networkData, options);
-
-        // Al hacer click, expandir
-        network.on("click", function(params) {
-            if (params.nodes.length > 0) {
-                const nodeId = params.nodes[0];
-                const node = nodes.get(nodeId);
-                if (nodeId === "gateway") return;
-
-                const newExpanded = !node.isExpanded;
-                if (newExpanded) {
-                    nodes.forEach(n => {
-                        if (n.id !== nodeId && n.isExpanded) {
-                            nodes.update({
-                                id: n.id,
-                                label: getLabel(n.deviceData, false),
-                                isExpanded: false,
-                                font: { size: 11 }
-                            });
-                        }
-                    });
-                }
-
-                nodes.update({
-                    id: nodeId,
-                    label: getLabel(node.deviceData, newExpanded),
-                    isExpanded: newExpanded,
-                    font: { size: newExpanded ? 13 : 11 }
-                });
-
-                setTimeout(() => {
-                    network.fit({
-                        nodes: [nodeId, "gateway"],
-                        animation: { duration: 500, easingFunction: "easeOutQuad" }
-                    });
-                }, 100);
-            }
-        });
-    } else {
-        console.log("Actualizando red existente");
-        network.setData({ nodes: nodes, edges: edges });
-        setTimeout(() => {
-            network.stabilize();
-            network.fit();
-        }, 100);
-    }
+function closeDetailPanel() {
+    document.getElementById('nodeDetailPanel').classList.add('translate-x-80');
 }
 
 const scanBtn = document.getElementById('actualizarTopologia');
- const liquidContainer = document.getElementById('liquid-fill-container');
- const liquidLayer1 = document.getElementById('liquid-layer-1');
- const liquidLayer2 = document.getElementById('liquid-layer-2');
- const liquidLayer3 = document.getElementById('liquid-layer-3');
- const topoProgressInfo = document.getElementById('topoProgressInfo');
- const topoStatus = document.getElementById('topoStatus');
- const topoTimer = document.getElementById('topoTimer');
- let isScanningTopo = false;
+const liquidContainer = document.getElementById('liquid-fill-container');
+const liquidLayer1 = document.getElementById('liquid-layer-1');
+const liquidLayer2 = document.getElementById('liquid-layer-2');
+const liquidLayer3 = document.getElementById('liquid-layer-3');
+const topoProgressInfo = document.getElementById('topoProgressInfo');
+const topoStatus = document.getElementById('topoStatus');
+const topoTimer = document.getElementById('topoTimer');
+let isScanningTopo = false;
 
- function formatTime(seconds) {
-     if (!seconds || seconds < 0) return "--:--";
-     const mins = Math.floor(seconds / 60);
-     const secs = Math.floor(seconds % 60);
-     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
- }
+function formatTime(seconds) {
+    if (!seconds || seconds < 0) return "--:--";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
 
- function setTopoBtnState(scanning) {
-     isScanningTopo = scanning;
-     const icon = document.getElementById("syncIcon");
-     const text = document.getElementById("btnText");
-     const networkDiv = document.getElementById("network");
-     
-     if (scanning) {
-         scanBtn.disabled = true;
-         if (icon) icon.className = "fa-solid fa-sync-alt fa-spin";
-         if (text) text.innerText = "Analizando...";
-         
-         // 1. Ocultar nodos con fade out ANTES de mostrar olas
-         if (networkDiv) {
-             networkDiv.classList.add('opacity-0');
-         }
+function setTopoBtnState(scanning) {
+    isScanningTopo = scanning;
+    const icon = document.getElementById("syncIcon");
+    const text = document.getElementById("btnText");
+    const networkDiv = document.getElementById("network");
+    
+    if (scanning) {
+        scanBtn.disabled = true;
+        if (icon) icon.className = "fa-solid fa-sync-alt fa-spin";
+        if (text) text.innerText = "Analizando...";
+        
+        if (networkDiv) {
+            networkDiv.classList.add('opacity-0');
+        }
 
-         // 2. Mostrar olas con fade in tras un pequeño delay
-         setTimeout(() => {
-             liquidContainer.classList.remove('hidden');
-             setTimeout(() => {
-                 liquidContainer.classList.remove('opacity-0');
-             }, 10);
-         }, 300);
-     } else {
-         scanBtn.disabled = false;
-         if (icon) icon.className = "fa-solid fa-sync-alt";
-         if (text) text.innerText = "Actualizar topología";
-         
-         // 3. Desvanecer olas con fade out
-         liquidContainer.classList.add('opacity-0');
-         setTimeout(() => {
-             liquidContainer.classList.add('hidden');
-             
-             // 4. Mostrar nodos con fade in
-             if (networkDiv) {
-                 networkDiv.classList.remove('opacity-0');
-                 // Reajustar vis.js
-                 if (network) {
-                     network.setSize('100%', '100%');
-                     network.redraw();
-                     network.fit();
-                 }
-             }
-         }, 500);
-     }
- }
+        setTimeout(() => {
+            liquidContainer.classList.remove('hidden');
+            setTimeout(() => {
+                liquidContainer.classList.remove('opacity-0');
+            }, 10);
+        }, 300);
+    } else {
+        scanBtn.disabled = false;
+        if (icon) icon.className = "fa-solid fa-sync-alt";
+        if (text) text.innerText = "Actualizar topología";
+        
+        liquidContainer.classList.add('opacity-0');
+        setTimeout(() => {
+            liquidContainer.classList.add('hidden');
+            if (networkDiv) {
+                networkDiv.classList.remove('opacity-0');
+            }
+        }, 500);
+    }
+}
 
- function updateTopoProgress() {
-     fetch('{% url "scan_status" %}')
-         .then(res => res.json())
-         .then(data => {
-             if (data.status === 'running' || data.status === 'cancelling') {
-                 setTopoBtnState(true);
-                 topoProgressInfo.classList.remove('hidden');
-                 
-                 const p = data.percentage || 0;
+function updateTopoProgress() {
+    fetch('{% url "scan_status" %}')
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'running' || data.status === 'cancelling') {
+                setTopoBtnState(true);
+                topoProgressInfo.classList.remove('hidden');
+                
+                const p = data.percentage || 0;
 
-                 liquidLayer1.style.height = `${Math.min(100, p + 16)}%`;
-                 liquidLayer2.style.height = `${Math.min(100, p + 8)}%`;
-                 liquidLayer3.style.height = `${p}%`;
-                 
-                 topoStatus.innerText = data.message || 'Analizando red...';
-                 topoTimer.innerText = `${formatTime(data.elapsed_time)} | Est: ${formatTime(data.estimated_remaining)}`;
-                 
-                 setTimeout(updateTopoProgress, 1000);
-             } else {
+                requestAnimationFrame(() => {
+                    liquidLayer1.style.height = `${Math.min(100, p + 16)}%`;
+                    liquidLayer2.style.height = `${Math.min(100, p + 8)}%`;
+                    liquidLayer3.style.height = `${p}%`;
+                });
+                
+                topoStatus.innerText = data.message || 'Analizando red...';
+                topoTimer.innerText = `${formatTime(data.elapsed_time)} | Est: ${formatTime(data.estimated_remaining)}`;
+                
+                setTimeout(updateTopoProgress, 1000);
+            } else {
                 if (isScanningTopo && data.status === 'finished') {
                     topoStatus.innerText = '¡COMPLETADO!';
 
@@ -654,12 +1000,9 @@ const scanBtn = document.getElementById('actualizarTopologia');
                     return;
                 }
                 if (
-                    data.status === 'cancelled'
-                    ||
-                    data.status === 'error'
-                    ||
-                    data.status === 'idle'
-                    ||
+                    data.status === 'cancelled' ||
+                    data.status === 'error' ||
+                    data.status === 'idle' ||
                     data.status === 'not_running'
                 ) {
                     setTopoBtnState(false);
@@ -668,30 +1011,26 @@ const scanBtn = document.getElementById('actualizarTopologia');
                     liquidLayer2.style.height = '0%';
                     liquidLayer3.style.height = '0%';
 
-                    topoStatus.innerText =
-                        data.status === 'cancelled'
-                        ? 'CANCELADO'
-                        : '';
+                    topoStatus.innerText = data.status === 'cancelled' ? 'CANCELADO' : '';
                     return;
                 }
             }
-         });
-    }
+        });
+}
 
- scanBtn.addEventListener('click', function() {
-     if (isScanningTopo) return;
+scanBtn.addEventListener('click', function() {
+    if (isScanningTopo) return;
 
-     fetch('{% url "scan" %}', {
-         method: 'POST',
-         headers: {
-             'X-CSRFToken': '{{ csrf_token }}',
-             'Content-Type': 'application/json'
-         },
-         body: JSON.stringify({})
-     }).then(() => updateTopoProgress());
- });
+    fetch('{% url "scan" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+    }).then(() => updateTopoProgress());
+});
 
-/* CARGA INICIAL */
 fetch('{% url "get_activos" %}')
     .then(r => r.json())
     .then(devices => {
@@ -699,7 +1038,44 @@ fetch('{% url "get_activos" %}')
         dibujarTopologia(devices);
     });
 
-// Verificar si ya hay uno corriendo al cargar
 updateTopoProgress();
+
+function initSearch() {
+    const input = document.getElementById('deviceSearch');
+
+    if (!input) return;
+
+    input.addEventListener('input', () => {
+
+        const value = input.value.toLowerCase().trim();
+
+        document.querySelectorAll('.topology-group-card').forEach(group => {
+
+            let visibleDevices = 0;
+
+            group.querySelectorAll('.topology-device-tile').forEach(device => {
+
+                const text = device.innerText.toLowerCase();
+
+                const visible = text.includes(value);
+
+                device.classList.toggle('hidden-device', !visible);
+
+                if (visible) visibleDevices++;
+            });
+
+            group.classList.toggle(
+                'hidden-group',
+                visibleDevices === 0
+            );
+        });
+    });
+}
+
+window.addEventListener('themeChanged', () => {
+    fetch('{% url "get_activos" %}')
+        .then(r => r.json())
+        .then(devices => dibujarTopologia(devices));
+});
 </script>
 {% endblock %}
