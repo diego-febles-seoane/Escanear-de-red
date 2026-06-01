@@ -31,103 +31,65 @@
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div class="lg:col-span-3 flex flex-col gap-6">
-            <div class="glass-card rounded-3xl border border-white/10 p-1 relative overflow-hidden flex-1 min-h-[750px]">
-                <!-- Contenedor de Inundación (AHORA DETRÁS DE LOS TÍTULOS PERO DELANTE DEL MAPA) -->
-                <div id="liquid-fill-container" class="absolute inset-0 z-20 pointer-events-none opacity-0 transition-opacity duration-500">
-                    <div
-                        id="liquid-layer-1"
-                        class="liquid-layer liquid-blue"
-                        style="height:0%;"
-                    >
-                        <div class="wave-track wave-track-1">
-                            <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
-                                <path d="
-                                    M0,70
-                                    C240,20 480,20 720,70
-                                    C960,120 1200,120 1440,70
-                                    C1680,20 1920,20 2160,70
-                                    C2400,120 2640,120 2880,70
-                                    L2880,120
-                                    L0,120
-                                    Z
-                                "></path>
-                            </svg>
-                        </div>
-                    </div>
+    <div class="lg:col-span-3 flex flex-col gap-6">
+        <div class="glass-card rounded-3xl border border-white/10 p-1 relative overflow-hidden flex-1 min-h-[750px]">
+                
+                <!-- 1. MAPA (Base - Ocupa todo el espacio absoluto) -->
+                <div id="network" class="absolute inset-0 bg-[#0a0f18]/95 z-10 transition-opacity duration-500"></div>
 
-                    <div
-                        id="liquid-layer-2"
-                        class="liquid-layer liquid-cyan"
-                        style="height:0%; transition-delay:100ms;"
-                    >
-                        <div class="wave-track wave-track-2">
-                            <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
-                                <path d="
-                                    M0,70
-                                    C240,40 480,40 720,70
-                                    C960,100 1200,100 1440,70
-                                    C1680,40 1920,40 2160,70
-                                    C2400,100 2640,100 2880,70
-                                    L2880,120
-                                    L0,120
-                                    Z
-                                "></path>
-                            </svg>
-                        </div>
-                    </div>
-
-                    <div
-                        id="liquid-layer-3"
-                        class="liquid-layer liquid-front"
-                        style="height:0%; transition-delay:200ms;"
-                    >
-                        <div class="wave-track wave-track-3">
-                            <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
-                                <path d="
-                                    M0,75
-                                    C240,55 480,55 720,75
-                                    C960,95 1200,95 1440,75
-                                    C1680,55 1920,55 2160,75
-                                    C2400,95 2640,95 2880,75
-                                    L2880,120
-                                    L0,120
-                                    Z
-                                "></path>
-                            </svg>
-                        </div>
+                <!-- 2. INUNDACIÓN (Encima del mapa durante el escaneo) -->
+                <div id="liquid-fill-container" class="absolute inset-0 z-20 pointer-events-none opacity-0 transition-opacity duration-500 hidden">
+                <!-- Capa 1 -->
+                <div id="liquid-layer-1" class="liquid-layer liquid-blue" style="height:0%;">
+                    <div class="wave-track wave-track-1">
+                        <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
+                            <path d="M0,70 C240,20 480,20 720,70 C960,120 1200,120 1440,70 C1680,20 1920,20 2160,70 C2400,120 2640,120 2880,70 L2880,120 L0,120 Z"></path>
+                        </svg>
                     </div>
                 </div>
-                <div class="p-6 flex justify-between items-center border-b border-white/5 relative z-30">
-                    <div class="header-readable-box">
-                        <h3 class="text-2xl font-bold text-white flex items-center gap-3">
-                            <i class="fa-solid fa-network-wired text-cyan-400"></i>
-                            Mapa de Red
-                        </h3>
-                        <p class="text-gray-300 text-xs mt-1">
-                            Visualización de nodos y conexiones activas
-                        </p>
-                    </div>
-                    <div id="topoProgressInfo" class="hidden flex flex-col items-end mr-4 header-readable-box">
-                        <span id="topoStatus" class="text-[10px] text-cyan-400 font-bold uppercase tracking-tighter">Observando...</span>
-                        <span id="topoTimer" class="text-[10px] text-gray-500 font-mono">00:00 | Est: --:--</span>
+                <!-- Capa 2 -->
+                <div id="liquid-layer-2" class="liquid-layer liquid-cyan" style="height:0%; transition-delay:100ms;">
+                    <div class="wave-track wave-track-2">
+                        <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
+                            <path d="M0,70 C240,40 480,40 720,70 C960,100 1200,100 1440,70 C1680,40 1920,40 2160,70 C2400,100 2640,100 2880,70 L2880,120 L0,120 Z"></path>
+                        </svg>
                     </div>
                 </div>
-                <!-- Contenedor de Vis.js (Debajo de las olas) -->
-                <div id="network" class="w-full h-[650px] bg-[#0a0f18]/95 relative z-10"></div>
+                <!-- Capa 3 -->
+                <div id="liquid-layer-3" class="liquid-layer liquid-front" style="height:0%; transition-delay:200ms;">
+                    <div class="wave-track wave-track-3">
+                        <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
+                            <path d="M0,75 C240,55 480,55 720,75 C960,95 1200,95 1440,75 C1680,55 1920,55 2160,75 C2400,95 2640,95 2880,75 L2880,120 L0,120 Z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. TÍTULOS (Siempre al frente) -->
+            <div class="p-6 flex justify-between items-center border-b border-white/5 absolute top-0 left-0 w-full z-30 pointer-events-none">
+                <div class="header-readable-box pointer-events-auto">
+                    <h3 class="text-2xl font-bold text-white flex items-center gap-3">
+                        <i class="fa-solid fa-network-wired text-cyan-400"></i>
+                        Mapa de Red
+                    </h3>
+                    <p class="text-gray-300 text-xs mt-1">Visualización de nodos y conexiones activas</p>
+                </div>
+                <div id="topoProgressInfo" class="hidden flex flex-col items-end mr-4 header-readable-box pointer-events-auto">
+                    <span id="topoStatus" class="text-[10px] text-cyan-400 font-bold uppercase tracking-tighter">Observando...</span>
+                    <span id="topoTimer" class="text-[10px] text-gray-500 font-mono">00:00 | Est: --:--</span>
+                </div>
             </div>
         </div>
+    </div>
 
     <!-- Gráficos de Dispositivos -->
     <div class="lg:col-span-1 space-y-6">
-        <div class="glass-card rounded-2xl p-6 border border-white/10 relative overflow-hidden">
+        <div class="glass-card rounded-2xl p-6 border border-white/10 relative">
             <h3 class="text-xl font-semibold mb-6 text-cyan-400 text-center">Tipos de Dispositivo</h3>
-            <div class="relative" style="height: 250px;">
-                <canvas id="deviceTypeChart"></canvas>
+            <div id="deviceTypeChartContainer" class="chart-container-custom">
+                <!-- Barras horizontales inyectadas por JS -->
             </div>
-            <div id="chartLegend" class="mt-6 space-y-2">
-                <!-- Leyenda dinámica -->
-            </div>
+            <!-- Eliminado el div chartLegend ya que los datos van en las filas -->
         </div>
 
         <div class="glass-card rounded-2xl p-6 border border-white/10 flex flex-col items-center justify-center relative overflow-hidden">
@@ -149,6 +111,62 @@
         padding: 14px 18px;
         box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
     }
+    
+    /* Estilos para el gráfico de barras HORIZONTALES personalizado */
+    .chart-container-custom {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        padding: 10px 5px;
+        background: transparent;
+        border-radius: 16px;
+        margin-bottom: 0px;
+    }
+
+    .chart-row-custom {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .chart-info-custom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+    }
+
+    .chart-bar-wrapper {
+        width: 100%;
+        height: 24px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .chart-bar-custom {
+        height: 100%;
+        width: 0%; /* Inicia en 0 para animación */
+        border-radius: 20px;
+        transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .chart-label-custom {
+        color: #9ca3af;
+        font-weight: 500;
+    }
+
+    .chart-value-custom {
+        font-weight: bold;
+        color: white;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 10px;
+    }
+
     .liquid-layer {
         position: absolute;
         left: 0;
@@ -278,83 +296,107 @@ let deviceChart = null;
 let portsChart = null;
 
 function actualizarGrafico(data) {
-    const ctx = document.getElementById('deviceTypeChart').getContext('2d');
+    const chartContainer = document.getElementById('deviceTypeChartContainer');
     const totalElement = document.getElementById('totalDevices');
     
     // 1. Procesar Tipos de Dispositivos
     const typeCounts = {};
-
     data.forEach(d => {
-        // Tipos
         const type = d.tipo_dispositivo || d.tipo || 'Desconocido';
         typeCounts[type] = (typeCounts[type] || 0) + 1;
     });
 
-    totalElement.innerText = data.length;
+    const total = data.length;
+    totalElement.innerText = total;
 
-    // Colores base
-    const colors = ['#06b6d4', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f97316'];
+    // 2. Renderizar Barras HORIZONTALES
+    chartContainer.innerHTML = '';
+    const types = Object.keys(typeCounts);
+    const counts = Object.values(typeCounts);
+    const maxCount = Math.max(...counts, 1);
 
-    // --- GRÁFICO 1: TIPOS ---
-    const typeLabels = Object.keys(typeCounts);
-    const typeValues = Object.values(typeCounts);
+    // Paleta de colores variada y dinámica
+    const getDynamicColor = (index) => {
+        const colors = [
+            'linear-gradient(to right, #06b6d4, #22d3ee)', // Cyan
+            'linear-gradient(to right, #10b981, #34d399)', // Green
+            'linear-gradient(to right, #8b5cf6, #a78bfa)', // Violet
+            'linear-gradient(to right, #f59e0b, #fbbf24)', // Amber
+            'linear-gradient(to right, #ef4444, #f87171)', // Red
+            'linear-gradient(to right, #6366f1, #818cf8)', // Indigo
+            'linear-gradient(to right, #ec4899, #f472b6)', // Pink
+            'linear-gradient(to right, #f97316, #fb923c)', // Orange
+            'linear-gradient(to right, #14b8a6, #2dd4bf)', // Teal
+            'linear-gradient(to right, #3b82f6, #60a5fa)'  // Blue
+        ];
+        return colors[index % colors.length];
+    };
 
-    if (deviceChart) {
-        deviceChart.data.labels = typeLabels;
-        deviceChart.data.datasets[0].data = typeValues;
-        deviceChart.update();
-    } else {
-        deviceChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: typeLabels,
-                datasets: [{
-                    data: typeValues,
-                    backgroundColor: colors.slice(0, typeLabels.length),
-                    borderWidth: 0,
-                    hoverOffset: 10
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(17, 24, 39, 0.9)' } },
-                cutout: '70%'
-            }
-        });
-    }
-
-    // Leyenda Tipos
-    const legendContainer = document.getElementById('chartLegend');
-    legendContainer.innerHTML = '';
-    typeLabels.forEach((label, i) => {
-        const value = typeValues[i];
-        const percent = Math.round((value / data.length) * 100);
-        legendContainer.innerHTML += `
-            <div class="flex items-center justify-between text-sm">
-                <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full" style="background-color: ${colors[i % colors.length]}"></div>
-                    <span class="text-gray-400">${label}</span>
-                </div>
-                <span class="font-semibold text-white">${percent}%</span>
-            </div>`;
+    types.forEach((type, i) => {
+        const count = typeCounts[type];
+        const widthPercent = (count / maxCount) * 100;
+        const color = getDynamicColor(i);
+        
+        const row = document.createElement('div');
+        row.className = 'chart-row-custom';
+        
+        row.innerHTML = `
+            <div class="chart-info-custom">
+                <span class="chart-label-custom">${type}</span>
+                <span class="chart-value-custom">${count} (${Math.round((count/total)*100)}%)</span>
+            </div>
+            <div class="chart-bar-wrapper">
+                <div class="chart-bar-custom" id="bar-type-${i}" style="background: ${color}; width: 0%;"></div>
+            </div>
+        `;
+        
+        chartContainer.appendChild(row);
+        
+        // Animación de expansión horizontal
+        setTimeout(() => {
+            const barElement = document.getElementById(`bar-type-${i}`);
+            if (barElement) barElement.style.width = widthPercent + '%';
+        }, 100 + (i * 50));
     });
 }
 
+function getIconForType(tipo) {
+    const t = (tipo || "").toLowerCase();
+    // Basado en device_classifier_service.py
+    if (t.includes('impresora')) return '🖨️';
+    if (t.includes('windows')) return '🪟';
+    if (t.includes('ssh')) return '🐚';
+    if (t.includes('router') || t.includes('switch') || t.includes('ap') || t.includes('red')) return '🌐';
+    if (t.includes('servidor web') || t.includes('panel web')) return '🌐';
+    if (t.includes('ordenador')) return '💻';
+    if (t.includes('movil') || t.includes('tablet') || t.includes('apple') || t.includes('samsung')) return '📱';
+    if (t.includes('cámara') || t.includes('seguridad') || t.includes('dahua') || t.includes('hikvision')) return '📸';
+    if (t.includes('multicast') || t.includes('mcast')) return '📡';
+    if (t.includes('desconocido')) return '❓';
+    return '🔌';
+}
+
 function getLabel(device, expanded = false) {
-    const nombre = device.nombre_dispositivo || "Dispositivo";
+    const nombreFull = device.nombre_dispositivo || "Dispositivo";
+    // Cortamos el nombre para la vista minificada para evitar solapamientos
+    const shortName = nombreFull.length > 12 ? nombreFull.substring(0, 10) + ".." : nombreFull;
+    
     const ip = device.ip || "-";
     const mac = device.mac || "-";
     const riesgo = device.riesgo || "BAJO";
     const fabricante = device.fabricante || "-";
     const tipo = device.tipo_dispositivo || "-";
+    const icono = getIconForType(tipo);
 
     if (!expanded) {
-        return `${nombre}\n${ip}`;
+        // Vista simplificada: SOLO EL ICONO (o icono + nombre muy corto)
+        return `${icono}\n${shortName}`;
     }
 
-    return `[ ${nombre} ]\n` +
+    // Vista detallada: Se expande la caja y muestra todo
+    return `${icono} [ DETALLES ]\n` +
            `------------------------\n` +
+           `DISP: ${nombreFull}\n` +
            `IP: ${ip}\n` +
            `MAC: ${mac}\n` +
            `FAB: ${fabricante}\n` +
@@ -365,11 +407,14 @@ function getLabel(device, expanded = false) {
 }
 
 function dibujarTopologia(data) {
+    console.log("Dibujando topología con", data.length, "dispositivos");
     actualizarGrafico(data);
+    
+    // 1. Limpiar DataSets
     nodes.clear();
     edges.clear();
 
-    // Nodo Central
+    // 2. Nodo Central
     nodes.add({
         id: "gateway",
         label: "GATEWAY / ROUTER",
@@ -381,37 +426,56 @@ function dibujarTopologia(data) {
             highlight: { background: '#10b981', border: '#059669' }
         },
         font: { color: '#ffffff', face: 'monospace', size: 16, align: 'center', bold: true },
-        x: 0, y: 0 // Posición inicial central
+        x: 0, y: 0
     });
+
+    // 3. Añadir Nodos de Dispositivos (Filtrando duplicados por ID)
+    const newNodes = [];
+    const newEdges = [];
+    const idsVistos = new Set();
 
     data.forEach((device, index) => {
         const nodeId = device.mac || device.ip || `node_${index}`;
         
-        nodes.add({
+        if (idsVistos.has(nodeId)) return;
+        idsVistos.add(nodeId);
+
+        newNodes.push({
             id: nodeId,
             label: getLabel(device),
-            shape: "box",
-            margin: 12,
+            shape: "box", // Usamos box para que el texto esté contenido
+            margin: 10,
             color: {
                 background: '#1f2937',
                 border: '#374151',
                 highlight: { background: '#111827', border: '#10b981' }
             },
-            font: { color: '#e5e7eb', face: 'monospace', size: 12, align: 'left' },
+            font: { 
+                color: '#e5e7eb', 
+                face: 'monospace', 
+                size: 11, 
+                align: 'center',
+                multi: true // Habilitar multilínea
+            },
             deviceData: device,
             isExpanded: false
         });
 
-        edges.add({
+        newEdges.push({
             from: "gateway",
             to: nodeId,
             color: { color: 'rgba(255,255,255,0.15)', highlight: '#10b981' },
             width: 1,
-            length: 180 // Distancia más corta para evitar que se dispersen
+            length: 100 // Más distancia para evitar que las cajas choquen
         });
     });
 
+    nodes.add(newNodes);
+    edges.add(newEdges);
+
+    // 4. Inicializar o Actualizar Red
     if (!network) {
+        console.log("Creando nueva instancia de Vis.js");
         const container = document.getElementById("network");
         const networkData = { nodes: nodes, edges: edges };
         const options = {
@@ -419,17 +483,17 @@ function dibujarTopologia(data) {
                 enabled: true,
                 solver: 'forceAtlas2Based',
                 forceAtlas2Based: {
-                    gravitationalConstant: -150,
-                    centralGravity: 0.02,
-                    springLength: 200,
-                    springConstant: 0.08,
+                    gravitationalConstant: -150, // Más repulsión para separar cajas
+                    centralGravity: 0.03,        
+                    springLength: 150,
+                    springConstant: 0.05,
                     damping: 0.4,
-                    avoidOverlap: 1 // Crucial para evitar solapamiento
+                    avoidOverlap: 1              
                 },
                 stabilization: { 
                     enabled: true,
                     iterations: 1000,
-                    updateInterval: 50
+                    updateInterval: 100
                 }
             },
             interaction: {
@@ -444,33 +508,22 @@ function dibujarTopologia(data) {
         };
         network = new vis.Network(container, networkData, options);
 
-        // Centrar al estabilizar
-        network.on("stabilizationIterationsDone", function () {
-            network.fit({
-                animation: { duration: 1000, easingFunction: "easeInOutQuad" }
-            });
-        });
-
-        // Evento de clic
+        // Al hacer click, expandir
         network.on("click", function(params) {
             if (params.nodes.length > 0) {
                 const nodeId = params.nodes[0];
                 const node = nodes.get(nodeId);
-                
                 if (nodeId === "gateway") return;
 
                 const newExpanded = !node.isExpanded;
-                
                 if (newExpanded) {
-                    // Cerrar otros
                     nodes.forEach(n => {
                         if (n.id !== nodeId && n.isExpanded) {
                             nodes.update({
                                 id: n.id,
                                 label: getLabel(n.deviceData, false),
                                 isExpanded: false,
-                                font: { size: 12 },
-                                color: { background: '#1f2937' }
+                                font: { size: 11 }
                             });
                         }
                     });
@@ -480,11 +533,9 @@ function dibujarTopologia(data) {
                     id: nodeId,
                     label: getLabel(node.deviceData, newExpanded),
                     isExpanded: newExpanded,
-                    font: { size: newExpanded ? 14 : 12 },
-                    color: { background: newExpanded ? '#111827' : '#1f2937' }
+                    font: { size: newExpanded ? 13 : 11 }
                 });
 
-                // Suavizar el ajuste
                 setTimeout(() => {
                     network.fit({
                         nodes: [nodeId, "gateway"],
@@ -494,7 +545,12 @@ function dibujarTopologia(data) {
             }
         });
     } else {
-        network.fit();
+        console.log("Actualizando red existente");
+        network.setData({ nodes: nodes, edges: edges });
+        setTimeout(() => {
+            network.stabilize();
+            network.fit();
+        }, 100);
     }
 }
 
@@ -519,20 +575,46 @@ const scanBtn = document.getElementById('actualizarTopologia');
      isScanningTopo = scanning;
      const icon = document.getElementById("syncIcon");
      const text = document.getElementById("btnText");
+     const networkDiv = document.getElementById("network");
      
      if (scanning) {
-         scanBtn.classList.remove('from-green-500', 'to-cyan-600');
-         scanBtn.classList.add('from-red-500', 'to-red-700');
-         if (icon) icon.className = "fa-solid fa-xmark";
-         if (text) text.innerText = "Cancelar";
-         liquidContainer.classList.remove('opacity-0');
+         scanBtn.disabled = true;
+         if (icon) icon.className = "fa-solid fa-sync-alt fa-spin";
+         if (text) text.innerText = "Analizando...";
+         
+         // 1. Ocultar nodos con fade out ANTES de mostrar olas
+         if (networkDiv) {
+             networkDiv.classList.add('opacity-0');
+         }
+
+         // 2. Mostrar olas con fade in tras un pequeño delay
+         setTimeout(() => {
+             liquidContainer.classList.remove('hidden');
+             setTimeout(() => {
+                 liquidContainer.classList.remove('opacity-0');
+             }, 10);
+         }, 300);
      } else {
-         scanBtn.classList.add('from-green-500', 'to-cyan-600');
-         scanBtn.classList.remove('from-red-500', 'to-red-700');
+         scanBtn.disabled = false;
          if (icon) icon.className = "fa-solid fa-sync-alt";
          if (text) text.innerText = "Actualizar topología";
+         
+         // 3. Desvanecer olas con fade out
          liquidContainer.classList.add('opacity-0');
-         scanBtn.disabled = false;
+         setTimeout(() => {
+             liquidContainer.classList.add('hidden');
+             
+             // 4. Mostrar nodos con fade in
+             if (networkDiv) {
+                 networkDiv.classList.remove('opacity-0');
+                 // Reajustar vis.js
+                 if (network) {
+                     network.setSize('100%', '100%');
+                     network.redraw();
+                     network.fit();
+                 }
+             }
+         }, 500);
      }
  }
 
@@ -550,7 +632,7 @@ const scanBtn = document.getElementById('actualizarTopologia');
                  liquidLayer2.style.height = `${Math.min(100, p + 8)}%`;
                  liquidLayer3.style.height = `${p}%`;
                  
-                 topoStatus.innerText = data.status === 'cancelling' ? 'CANCELANDO...' : (data.message || 'Analizando red...');
+                 topoStatus.innerText = data.message || 'Analizando red...';
                  topoTimer.innerText = `${formatTime(data.elapsed_time)} | Est: ${formatTime(data.estimated_remaining)}`;
                  
                  setTimeout(updateTopoProgress, 1000);
@@ -597,21 +679,7 @@ const scanBtn = document.getElementById('actualizarTopologia');
     }
 
  scanBtn.addEventListener('click', function() {
-     if (isScanningTopo) {
-         if (!confirm('¿Seguro que quieres cancelar?')) return;
-         fetch('{% url "cancel_scan" %}', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-            }
-        })
-        .then(r => r.json())
-        .then(data => {
-            topoStatus.innerText = 'CANCELANDO...';
-            setTimeout(updateTopoProgress, 500);
-        });
-         return;
-     }
+     if (isScanningTopo) return;
 
      fetch('{% url "scan" %}', {
          method: 'POST',
@@ -626,7 +694,10 @@ const scanBtn = document.getElementById('actualizarTopologia');
 /* CARGA INICIAL */
 fetch('{% url "get_activos" %}')
     .then(r => r.json())
-    .then(devices => dibujarTopologia(devices));
+    .then(devices => {
+        console.log("Activos actualizados:", devices.length);
+        dibujarTopologia(devices);
+    });
 
 // Verificar si ya hay uno corriendo al cargar
 updateTopoProgress();

@@ -183,40 +183,18 @@
     function setScanState(scanning) {
         isScanning = scanning;
         if (scanning) {
-            scanBtn.classList.remove('from-green-500', 'to-cyan-600');
-            scanBtn.classList.add('from-red-500', 'to-red-700');
-            scanIcon.className = 'fa-solid fa-xmark';
-            scanText.innerText = 'CANCELAR';
+            scanBtn.disabled = true;
+            scanIcon.className = 'fa-solid fa-search fa-spin';
+            scanText.innerText = 'Escaneando...';
         } else {
-            scanBtn.classList.add('from-green-500', 'to-cyan-600');
-            scanBtn.classList.remove('from-red-500', 'to-red-700');
+            scanBtn.disabled = false;
             scanIcon.className = 'fa-solid fa-search';
             scanText.innerText = 'Escanear';
-            scanBtn.disabled = false;
         }
     }
 
     scanBtn.addEventListener('click', function() {
-        if (isScanning) {
-            if (!confirm('¿Seguro que quieres cancelar el escaneo?')) return;
-
-            fetch('{% url "cancel_scan" %}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'cancelling') {
-                    progressStatus.innerText = 'CANCELANDO...';
-
-                    setTimeout(updateProgress, 500);
-                }
-            });
-
-            return;
-        }
+        if (isScanning) return;
 
         progressContainer.classList.remove('d-none');
         progressStatus.classList.remove('text-red-500');
@@ -262,8 +240,8 @@
                         fetchData();
                         fetchStats();
                     }, 1500);
-                } else if (data.status === 'error' || data.status === 'cancelled') {
-                    progressStatus.innerText = data.message || 'Escaneo detenido';
+                } else if (data.status === 'error') {
+                    progressStatus.innerText = data.message || 'Error en el escaneo';
                     progressStatus.classList.add('text-red-500');
                     setScanState(false);
                 }

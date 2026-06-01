@@ -70,6 +70,16 @@ class device_classifier_service:
             marca in fabricante for marca in ["apple", "samsung", "xiaomi", "oppo", "huawei", "nokia", "motorola", "lg"]
         ):
             return "Dispositivo movil / tablet"
+
+        # ---- SEGURIDAD / CÁMARAS ----
+        if any(
+            marca in fabricante for marca in ["zhejiang dahua", "hikvision", "axis", "bosch", "hanwha", "reolink", "vivotek"]
+        ):
+            return "Cámara / Seguridad"
+        
+        # ---- SERVICIOS MULTICAST / RED ----
+        if "mcast.net" in host_name or "224.0.0" in host_name:
+            return "Servicio de Red / Multicast"
         
         # ---- CUALQUIER FABRICANTE ----
         if fabricante:

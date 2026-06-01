@@ -58,8 +58,7 @@ scan_progress = {
     'percentage': 0,
     'status': 'idle',
     'message': '',
-    'start_time': None,
-    'cancelled': False
+    'start_time': None
 }
 
 _mongo_session_data = {}
@@ -140,20 +139,6 @@ def index(request):
 @mongo_login_required
 @csrf_exempt
 @require_POST
-def cancel_scan(request):
-    global scan_progress
-    print("CANCEL SCAN PULSADO")
-    if scan_progress['status'] == 'running':
-        scan_progress['cancelled'] = True
-        scan_progress['status'] = 'cancelling'
-        scan_progress['message'] = 'Cancelando escaneo...'
-        print(scan_progress)
-        return JsonResponse({'status': 'cancelling'})
-    return JsonResponse({'status': 'not_running'})
-
-@mongo_login_required
-@csrf_exempt
-@require_POST
 def scan(request):
     set_mongo_session_data(
         request.session.get('mongo_user'),
@@ -170,8 +155,7 @@ def scan(request):
         'percentage': 0,
         'status': 'running',
         'message': 'Iniciando observación pasiva...',
-        'start_time': datetime.now().timestamp(),
-        'cancelled': False
+        'start_time': datetime.now().timestamp()
     }
     
     def run_scan(m_user, m_pass, m_host):
@@ -185,18 +169,12 @@ def scan(request):
                 raise Exception("No se pudo inicializar el servicio de escaneo")
             
             def progress_callback(percentage, message):
-                if scan_progress.get('cancelled'):
-                    raise Exception("Escaneo cancelado por el usuario")
-
                 scan_progress['percentage'] = percentage
                 scan_progress['message'] = message
 
             # Realizar observación pasiva sin enviar paquetes
             ids = scanner.escanar_y_guardar(progress_callback=progress_callback)
             
-            if scan_progress['cancelled']:
-                raise Exception("Escaneo cancelado por el usuario")
-
             scan_progress['percentage'] = 100
             scan_progress['status'] = 'finished'
             if ids:
@@ -205,14 +183,9 @@ def scan(request):
                 scan_progress['message'] = 'Finalizado. No se detectó actividad reciente.'
                 
         except Exception as e:
-            if str(e) == "Escaneo cancelado por el usuario":
-                scan_progress['status'] = 'cancelled'
-                scan_progress['message'] = 'Escaneo cancelado'
-                scan_progress['percentage'] = 0
-            else:
-                scan_progress['status'] = 'error'
-                scan_progress['message'] = f'Error: {str(e)}'
-                print(f"Scan error: {e}")
+            scan_progress['status'] = 'error'
+            scan_progress['message'] = f'Error: {str(e)}'
+            print(f"Scan error: {e}")
     
     m_user = request.session.get('mongo_user')
     m_pass = request.session.get('mongo_password')
