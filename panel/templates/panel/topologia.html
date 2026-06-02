@@ -33,14 +33,31 @@
 <!-- TARJETAS SUPERIORES -->
 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
 
-    <div class="glass-card rounded-2xl p-5 border border-white/10 flex flex-col items-center justify-center relative overflow-hidden">
+    <div class="glass-card rounded-2xl p-5 border border-white/10 relative overflow-hidden">
         <h3 class="text-lg font-semibold mb-3 text-cyan-400 text-center">
             Resumen de Activos
         </h3>
 
-        <div class="text-center">
+        <div class="text-center mb-4">
             <p class="text-4xl font-bold text-white" id="totalDevices" style="color: var(--text-main) !important;">0</p>
             <p class="text-gray-400 text-sm">Dispositivos detectados</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="rounded-xl bg-white/5 p-2 border border-white/10">
+                <p class="text-lg font-bold text-cyan-400" id="totalCategorias">0</p>
+                <p class="text-[10px] text-gray-400">Categorías</p>
+            </div>
+
+            <div class="rounded-xl bg-white/5 p-2 border border-white/10">
+                <p class="text-lg font-bold text-purple-400" id="totalFabricantes">0</p>
+                <p class="text-[10px] text-gray-400">Fabricantes</p>
+            </div>
+
+            <div class="rounded-xl bg-white/5 p-2 border border-white/10">
+                <p class="text-lg font-bold text-red-400" id="totalRiesgoAlto">0</p>
+                <p class="text-[10px] text-gray-400">Alto riesgo</p>
+            </div>
         </div>
     </div>
 
@@ -211,14 +228,26 @@
 
 </div>
 
+<div id="deviceTooltip" class="device-tooltip hidden"></div>
+
 <style>
     .header-readable-box {
         background: var(--bg-card-solid);
+        backdrop-filter: blur(22px);
+        border-radius: 20px;
+        padding: 16px 20px;
         border: 1px solid var(--border-color);
-        backdrop-filter: var(--glass-blur);
-        border-radius: 18px;
-        padding: 14px 18px;
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+        box-shadow:
+            0 15px 40px rgba(0,0,0,0.20),
+            0 0 35px rgba(34,197,94,0.08),
+            0 0 20px rgba(6,182,212,0.10);
+    }
+    [data-theme="light"] .header-readable-box {
+        background: rgba(255,255,255,0.92);
+        border: 1px solid rgba(0,0,0,0.08);
+        box-shadow:
+            0 10px 24px rgba(0,0,0,0.08),
+            0 0 12px rgba(6,182,212,0.04);
     }
 
     .network-grid-layout {
@@ -484,7 +513,135 @@
     .wave-svg path {
         fill: currentColor;
     }
+    #network {
+        transition: opacity 700ms ease-in-out !important;
+    }
 
+    #liquid-fill-container {
+        transition: opacity 700ms ease-in-out !important;
+    }
+    .device-tooltip {
+        position: fixed !important;
+        z-index: 999999 !important;
+        min-width: 300px;
+        max-width: 380px;
+        padding: 18px 20px;
+        border-radius: 20px;
+        background: rgba(10, 15, 24, 0.97);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: #ffffff;
+        box-shadow: 0 22px 55px rgba(0, 0, 0, 0.50);
+        backdrop-filter: blur(16px);
+        pointer-events: none;
+        font-size: 12px;
+    }
+
+    .device-tooltip.hidden {
+        display: none !important;
+    }
+
+    .device-tooltip-title {
+        font-size: 14px;
+        font-weight: 900;
+        color: #ffffff;
+        margin-bottom: 12px;
+    }
+
+    .device-tooltip-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 6px 0;
+    }
+
+    .device-tooltip-label {
+        color: #9ca3af;
+        font-weight: 700;
+    }
+
+    .device-tooltip-value {
+        color: #ffffff;
+        text-align: right;
+        font-family: monospace;
+    }
+
+    .device-tooltip-risk-box {
+        margin-top: 14px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        font-weight: 900;
+        text-align: center;
+        color: #ffffff;
+    }
+
+    .risk-low {
+        background: linear-gradient(to right, #10b981, #34d399);
+    }
+
+    .risk-medium {
+        background: linear-gradient(to right, #f59e0b, #fbbf24);
+    }
+
+    .risk-high {
+        background: linear-gradient(to right, #ef4444, #f87171);
+    }
+    .risk-bottom-bar {
+        height: 6px;
+        border-radius: 999px;
+        margin-top: 8px;
+        box-shadow: 0 0 8px rgba(255,255,255,0.15);
+    }
+
+    .risk-bottom-bar.bajo {
+        background: linear-gradient(to right, #10b981, #34d399);
+        box-shadow:
+            0 0 10px rgba(16,185,129,0.45),
+            0 0 20px rgba(52,211,153,0.25);
+    }
+
+    .risk-bottom-bar.medio {
+        background: linear-gradient(to right, #f59e0b, #fbbf24);
+        box-shadow:
+            0 0 10px rgba(245,158,11,0.45),
+            0 0 20px rgba(251,191,36,0.25);
+    }
+
+    .risk-bottom-bar.alto {
+        background: linear-gradient(to right, #ef4444, #f87171);
+        box-shadow:
+            0 0 10px rgba(239,68,68,0.45),
+            0 0 20px rgba(248,113,113,0.25);
+    }
+    .topology-group-card {
+        animation: groupFadeIn 450ms ease both;
+    }
+
+    .topology-device-tile {
+        animation: tileFadeIn 420ms ease both;
+    }
+
+    @keyframes groupFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(14px) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    @keyframes tileFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(8px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
     .liquid-blue .wave-track { color: #f87171; }
     .liquid-cyan .wave-track { color: #fbbf24; }
     .liquid-front .wave-track { color: #22d3ee; }
@@ -597,6 +754,14 @@ function getIconForType(tipo) {
     return '⚪';
 }
 
+function getRiskBoxClass(riesgo) {
+    const r = (riesgo || 'BAJO').toUpperCase();
+
+    if (r === 'ALTO') return 'risk-high';
+    if (r === 'MEDIO') return 'risk-medium';
+    return 'risk-low';
+}
+
 function normalizarGrupo(tipo) {
     const t = (tipo || "Desconocido").toLowerCase();
 
@@ -630,6 +795,7 @@ function agruparPorTipo(data) {
 function actualizarGrafico(data) {
     const chartContainer = document.getElementById('deviceTypeChartContainer');
     const totalElement = document.getElementById('totalDevices');
+    let firstChartRender = true;
     
     const typeCounts = {};
     data.forEach(d => {
@@ -659,15 +825,23 @@ function actualizarGrafico(data) {
                 <span class="chart-value-custom">${count} (${Math.round((count/total)*100)}%)</span>
             </div>
             <div class="chart-bar-wrapper">
-                <div class="chart-bar-custom" id="bar-type-${i}" style="background: ${color}; width: 0%;"></div>
+                <div class="chart-bar-custom"
+                    id="bar-type-${i}"
+                    style="background: ${color}; width: ${firstChartRender ? '0%' : widthPercent + '%'};">
+                </div>
             </div>
         `;
         chartContainer.appendChild(row);
-        setTimeout(() => {
-            const barElement = document.getElementById(`bar-type-${i}`);
-            if (barElement) barElement.style.width = widthPercent + '%';
-        }, 100 + (i * 50));
+        if (firstChartRender) {
+            setTimeout(() => {
+                const barElement = document.getElementById(`bar-type-${i}`);
+                if (barElement) {
+                    barElement.style.width = widthPercent + '%';
+                }
+            }, 100 + (i * 50));
+        }
     });
+    firstChartRender = false;
 }
 
 function actualizarEstadisticasExtra(data) {
@@ -710,7 +884,7 @@ function actualizarEstadisticasExtra(data) {
                     <span class="chart-value-custom">${cantidad}</span>
                 </div>
                 <div class="chart-bar-wrapper">
-                    <div class="chart-bar-custom" style="background:${theme.grad}; width:${widthPercent}%;"></div>
+                    <div class="chart-bar-custom" style="background:linear-gradient(to right, #bbbbbb, #aaaaaa); width:${widthPercent}%;"></div>
                 </div>
             </div>
         `;
@@ -780,7 +954,101 @@ function escapeHTML(value) {
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
 }
+function getRiskClass(riesgo) {
+    const r = (riesgo || 'BAJO').toUpperCase();
 
+    if (r === 'ALTO') return 'text-red-400';
+    if (r === 'MEDIO') return 'text-yellow-400';
+    return 'text-green-400';
+}
+
+function showDeviceTooltip(event, device) {
+    const tooltip = document.getElementById('deviceTooltip');
+
+    if (!tooltip) return;
+
+    const nombre = escapeHTML(device.nombre_dispositivo || device.host_name || 'Dispositivo');
+    const ip = escapeHTML(device.ip || '-');
+    const mac = escapeHTML(device.mac || '-');
+    const fabricante = escapeHTML(device.fabricante || 'Desconocido');
+    const tipo = escapeHTML(device.tipo_dispositivo || device.tipo || 'Desconocido');
+    const riesgo = escapeHTML(device.riesgo || 'BAJO');
+    const primeraVez = formatPanelDate(device.primera_vez || device.primera_vez_conectado || device.fecha);
+    const ultimaVez = formatPanelDate(device.ultima_vez || device.ultima_vez_conectado || device.fecha);
+
+    tooltip.innerHTML = `
+        <div class="device-tooltip-title">${nombre}</div>
+
+        <div class="device-tooltip-row">
+            <span class="device-tooltip-label">IP</span>
+            <span class="device-tooltip-value">${ip}</span>
+        </div>
+
+        <div class="device-tooltip-row">
+            <span class="device-tooltip-label">MAC</span>
+            <span class="device-tooltip-value">${mac}</span>
+        </div>
+
+        <div class="device-tooltip-row">
+            <span class="device-tooltip-label">Fabricante</span>
+            <span class="device-tooltip-value">${fabricante}</span>
+        </div>
+
+        <div class="device-tooltip-row">
+            <span class="device-tooltip-label">Tipo</span>
+            <span class="device-tooltip-value">${tipo}</span>
+        </div>
+
+        <div class="device-tooltip-row">
+            <span class="device-tooltip-label">Primera vez</span>
+            <span class="device-tooltip-value">${primeraVez}</span>
+        </div>
+
+        <div class="device-tooltip-row">
+            <span class="device-tooltip-label">Última vez</span>
+            <span class="device-tooltip-value">${ultimaVez}</span>
+        </div>
+
+        <div class="device-tooltip-risk-box ${getRiskBoxClass(riesgo)}">
+            Riesgo ${riesgo}
+        </div>
+    `;
+
+    tooltip.classList.remove('hidden');
+    tooltip.style.display = 'block';
+    moveDeviceTooltip(event);
+}
+
+function moveDeviceTooltip(event) {
+    const tooltip = document.getElementById('deviceTooltip');
+
+    if (!tooltip || tooltip.classList.contains('hidden')) return;
+
+    const offset = 16;
+
+    let left = event.clientX + offset;
+    let top = event.clientY + offset;
+
+    const rect = tooltip.getBoundingClientRect();
+
+    if (left + rect.width > window.innerWidth) {
+        left = event.clientX - rect.width - offset;
+    }
+
+    if (top + rect.height > window.innerHeight) {
+        top = event.clientY - rect.height - offset;
+    }
+
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+}
+
+function hideDeviceTooltip() {
+    const tooltip = document.getElementById('deviceTooltip');
+    if (!tooltip) return;
+    tooltip.classList.add('hidden');
+    tooltip.style.display = 'none';
+}
 function renderizarTopologiaGrid(data) {
     const grid = document.getElementById('networkGrid');
 
@@ -799,7 +1067,7 @@ function renderizarTopologiaGrid(data) {
         return;
     }
 
-    grid.innerHTML = gruposOrdenados.map(([grupo, dispositivos]) => {
+    grid.innerHTML = gruposOrdenados.map(([grupo, dispositivos], index) => {
         const theme = getThemeForGroup(grupo);
         const icon = getIconForType(grupo);
         const safeGroup = escapeHTML(grupo);
@@ -809,25 +1077,29 @@ function renderizarTopologiaGrid(data) {
             const ip = device.ip || '-';
             const mac = device.mac || '';
             const encoded = encodeURIComponent(JSON.stringify(device));
-
+            const riesgoClase = (device.riesgo || 'BAJO').toLowerCase();
             return `
                 <button
                     type="button"
                     class="topology-device-tile"
                     data-device="${encoded}"
                     title="${escapeHTML(deviceName)} - ${escapeHTML(ip)} ${escapeHTML(mac)}"
+                    style="animation-delay:${index * 35}ms;"
                 >
                     <span class="topology-device-icon">${getIconForType(device.tipo_dispositivo || device.tipo || grupo)}</span>
                     <span class="topology-device-name">${escapeHTML(deviceName)}</span>
                     <span class="topology-device-ip">${escapeHTML(ip)}</span>
+                    <div class="risk-bottom-bar ${riesgoClase}"></div>
                 </button>
             `;
         }).join('');
 
+        
+
         return `
             <section
                 class="topology-group-card"
-                style="background:${theme.grad}; border-color:${theme.border};"
+                style="background:${theme.grad}; border-color:${theme.border}; animation-delay:${index * 80}ms;"
             >
                 <div class="topology-group-header">
                     <div class="topology-group-title">
@@ -856,6 +1128,19 @@ function renderizarTopologiaGrid(data) {
                 console.error('Error abriendo detalle de dispositivo:', error);
             }
         });
+
+        tile.addEventListener('mouseenter', (event) => {
+            try {
+                const device = JSON.parse(decodeURIComponent(tile.dataset.device));
+                showDeviceTooltip(event, device);
+            } catch (error) {
+                console.error('Error mostrando tooltip:', error);
+            }
+        });
+
+        tile.addEventListener('mousemove', moveDeviceTooltip);
+
+        tile.addEventListener('mouseleave', hideDeviceTooltip);
     });
 }
 
@@ -864,6 +1149,7 @@ function dibujarTopologia(data) {
     actualizarGrafico(data);
     actualizarEstadisticasExtra(data);
     actualizarLeyenda(data);
+    actualizarResumenRapido(data);
     renderizarTopologiaGrid(data);
     initSearch();
 }
@@ -952,13 +1238,19 @@ function setTopoBtnState(scanning) {
         if (icon) icon.className = "fa-solid fa-sync-alt";
         if (text) text.innerText = "Actualizar topología";
         
+        if (networkDiv) {
+            networkDiv.classList.add('opacity-0');
+        }
+
         liquidContainer.classList.add('opacity-0');
+
         setTimeout(() => {
             liquidContainer.classList.add('hidden');
+
             if (networkDiv) {
                 networkDiv.classList.remove('opacity-0');
             }
-        }, 500);
+        }, 700);
     }
 }
 
@@ -1042,28 +1334,17 @@ updateTopoProgress();
 
 function initSearch() {
     const input = document.getElementById('deviceSearch');
-
     if (!input) return;
-
     input.addEventListener('input', () => {
-
         const value = input.value.toLowerCase().trim();
-
         document.querySelectorAll('.topology-group-card').forEach(group => {
-
             let visibleDevices = 0;
-
             group.querySelectorAll('.topology-device-tile').forEach(device => {
-
                 const text = device.innerText.toLowerCase();
-
                 const visible = text.includes(value);
-
                 device.classList.toggle('hidden-device', !visible);
-
                 if (visible) visibleDevices++;
             });
-
             group.classList.toggle(
                 'hidden-group',
                 visibleDevices === 0
@@ -1073,9 +1354,32 @@ function initSearch() {
 }
 
 window.addEventListener('themeChanged', () => {
-    fetch('{% url "get_activos" %}')
-        .then(r => r.json())
-        .then(devices => dibujarTopologia(devices));
 });
+function actualizarResumenRapido(data) {
+    const totalCategorias = document.getElementById('totalCategorias');
+    const totalFabricantes = document.getElementById('totalFabricantes');
+    const totalRiesgoAlto = document.getElementById('totalRiesgoAlto');
+
+    if (!totalCategorias || !totalFabricantes || !totalRiesgoAlto) return;
+
+    const categorias = new Set();
+    const fabricantes = new Set();
+    let riesgoAlto = 0;
+
+    data.forEach(device => {
+        const tipo = device.tipo_dispositivo || device.tipo || 'Desconocido';
+        categorias.add(normalizarGrupo(tipo));
+
+        fabricantes.add(device.fabricante || 'Desconocido');
+
+        if ((device.riesgo || '').toUpperCase() === 'ALTO') {
+            riesgoAlto++;
+        }
+    });
+
+    totalCategorias.innerText = categorias.size;
+    totalFabricantes.innerText = fabricantes.size;
+    totalRiesgoAlto.innerText = riesgoAlto;
+}
 </script>
 {% endblock %}
