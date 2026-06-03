@@ -170,29 +170,44 @@
             <div id="liquid-fill-container" class="absolute inset-0 z-20 pointer-events-none opacity-0 transition-opacity duration-500 hidden">
 
                 <div id="liquid-layer-1" class="liquid-layer liquid-blue" style="height:0%;">
-                    <div class="shark-fin shark-fin-back"></div>
+                    
+
                     <div class="wave-track wave-track-1">
                         <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
                             <path d="M0,70 C240,20 480,20 720,70 C960,120 1200,120 1440,70 C1680,20 1920,20 2160,70 C2400,120 2640,120 2880,70 L2880,120 L0,120 Z"></path>
                         </svg>
                     </div>
+                    <div class="shark shark-back">
+                        <div class="shark-body"></div>
+                        <div class="shark-dorsal"></div>
+                    </div>
                 </div>
 
                 <div id="liquid-layer-2" class="liquid-layer liquid-cyan" style="height:0%; transition-delay:100ms;">
-                    <div class="shark-fin shark-fin-mid"></div>
+                    
+
                     <div class="wave-track wave-track-2">
                         <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
                             <path d="M0,70 C240,40 480,40 720,70 C960,100 1200,100 1440,70 C1680,40 1920,40 2160,70 C2400,100 2640,100 2880,70 L2880,120 L0,120 Z"></path>
                         </svg>
                     </div>
+                    <div class="shark shark-mid">
+                        <div class="shark-body"></div>
+                        <div class="shark-dorsal"></div>
+                    </div>
                 </div>
 
                 <div id="liquid-layer-3" class="liquid-layer liquid-front" style="height:0%; transition-delay:200ms;">
-                    <div class="shark-fin shark-fin-front"></div>
+                   
+
                     <div class="wave-track wave-track-3">
                         <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
                             <path d="M0,75 C240,55 480,55 720,75 C960,95 1200,95 1440,75 C1680,55 1920,55 2160,75 C2400,95 2640,95 2880,75 L2880,120 L0,120 Z"></path>
                         </svg>
+                    </div>
+                    <div class="shark shark-front">
+                        <div class="shark-body"></div>
+                        <div class="shark-dorsal"></div>
                     </div>
                 </div>
 
@@ -504,104 +519,133 @@
         border-color: rgba(255,255,255,0.35);
         box-shadow: 0 10px 22px rgba(0,0,0,0.25);
     }
-    .shark-fin {
-        position: absolute;
-        left: 0;
-        top: -48px;
-        width: 78px;
-        height: 58px;
-        pointer-events: none;
-        opacity: 0;
-        z-index: 1;
-        filter: drop-shadow(0 10px 14px rgba(0,0,0,0.35));
-    }
 
     .shark-fin {
         position: absolute;
         left: 0;
-        top: -76px;
-        width: 118px;
-        height: 88px;
+        width: 340px;
+        height: 180px;
         pointer-events: none;
         opacity: 0;
-        z-index: 2;
-        filter: drop-shadow(0 14px 18px rgba(0,0,0,0.40));
+        z-index: 0;
+
+    }
+    .wave-track-1 {
+        animation: waveMove1 12s linear infinite;
     }
 
-    .shark-fin-back {
-        top: -72px;
-        animation: sharkBackSwim 30s linear infinite;
-        transform-origin: center bottom;
+    .wave-track-2 {
+        animation: waveMove2 15s linear infinite;
     }
 
-    .shark-fin-mid {
-        top: -70px;
-        animation: sharkMidSwim 30s linear infinite;
-        transform-origin: center bottom;
+    .wave-track-3 {
+        animation: waveMove3 18s linear infinite;
     }
 
-    .shark-fin-front {
-        top: -68px;
-        animation: sharkFrontSwim 30s linear infinite;
-        transform-origin: center bottom;
+    .shark {
+        position: absolute;
+        left: 0;
+        top: -92px;
+        width: 280px;
+        height: 120px;
+        pointer-events: none;
+        opacity: 0;
+        z-index: 0;
+        will-change: transform, opacity;
     }
 
-    @keyframes sharkBackSwim {
-        0% {
-            opacity: 0;
-            transform: translateX(-160px) scale(0.78);
-        }
-        6% {
-            opacity: 0.55;
-        }
-        30% {
-            opacity: 0.55;
-            transform: translateX(calc(100vw + 160px)) scale(0.78);
-        }
-        36%,
-        100% {
-            opacity: 0;
-            transform: translateX(calc(100vw + 160px)) scale(0.78);
-        }
+    .shark-body {
+        position: absolute;
+        left: 0;
+        bottom: -2px;
+        width: 280px;
+        height: 52px;
+        border-radius: 60% 70% 55% 55%;
+        background: #94a3b8;
+        clip-path: polygon(
+            0% 62%,
+            10% 48%,
+            26% 34%,
+            45% 24%,
+            64% 26%,
+            82% 40%,
+            100% 58%,
+            82% 70%,
+            55% 78%,
+            24% 74%,
+            6% 68%
+        );
+        z-index: 4;
+    }
+
+    .shark-dorsal {
+        position: absolute;
+        left: 126px;
+        bottom: 34px;
+        width: 54px;
+        height: 62px;
+        background: #94a3b8;
+        clip-path: polygon(
+            10% 100%,
+            52% 0%,
+            88% 100%
+        );
+        border-radius: 70% 70% 20% 20%;
+        z-index: 9;
+    }
+
+    .shark::after {
+        content: "";
+        position: absolute;
+        left: 40px;
+        bottom: 0;
+        width: 210px;
+        height: 22px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.22);
+        filter: blur(7px);
+        z-index: 3;
+        opacity: 0.12;
+        filter: blur(5px);
+    }
+
+    .shark-back {
+        top: -98px;
+        transform: scale(0.78);
+        animation: sharkBackSwim 42s linear infinite;
+    }
+
+    .shark-mid {
+        top: -115px;
+        transform: scale(0.92);
+        animation: sharkMidSwim 42s linear infinite;
+    }
+
+    .shark-front {
+        top: -125px;
+        transform: scale(1.08);
+        animation: sharkFrontSwim 42s linear infinite;
+    }
+
+   @keyframes sharkBackSwim {
+        0% { opacity: 0; transform: translateX(-420px) scale(0.78); }
+        6% { opacity: 0.65; }
+        31% { opacity: 0.65; transform: translateX(calc(100vw + 420px)) scale(0.78); }
+        36%, 100% { opacity: 0; transform: translateX(calc(100vw + 420px)) scale(0.78); }
     }
 
     @keyframes sharkMidSwim {
-        0%,
-        36% {
-            opacity: 0;
-            transform: translateX(calc(100vw + 160px)) scaleX(-1) scale(0.98);
-        }
-        42% {
-            opacity: 0.72;
-        }
-        66% {
-            opacity: 0.72;
-            transform: translateX(-160px) scaleX(-1) scale(0.98);
-        }
-        72%,
-        100% {
-            opacity: 0;
-            transform: translateX(-160px) scaleX(-1) scale(0.98);
-        }
+        0%, 36% { opacity: 0; transform: translateX(calc(100vw + 420px)) scaleX(-1) scale(0.92); }
+        42% { opacity: 0.72; }
+        67% { opacity: 0.72; transform: translateX(-420px) scaleX(-1) scale(0.92); }
+        72%, 100% { opacity: 0; transform: translateX(-420px) scaleX(-1) scale(0.92); }
     }
 
     @keyframes sharkFrontSwim {
-        0%,
-        72% {
-            opacity: 0;
-            transform: translateX(-160px) scale(1.18);
-        }
-        78% {
-            opacity: 0.9;
-        }
-        96% {
-            opacity: 0.9;
-            transform: translateX(calc(100vw + 160px)) scale(1.18);
-        }
-        100% {
-            opacity: 0;
-            transform: translateX(calc(100vw + 160px)) scale(1.18);
-        }
+        0%, 72% { opacity: 0; transform: translateX(-440px) scale(1.08); }
+        78% { opacity: 0.85; }
+        98% { opacity: 0.85; transform: translateX(calc(100vw + 440px)) scale(1.08); }
+        100% { opacity: 0; transform: translateX(calc(100vw + 440px)) scale(1.08); }
     }
 
     .topology-device-icon {

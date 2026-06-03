@@ -136,8 +136,8 @@
             <div class="mb-6">
                 <p class="text-xs text-gray-500 uppercase tracking-wider mb-3 px-3">Menú</p>
                 <a href="{% url 'index' %}" class="sidebar-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
-                    <i class="fa-solid fa-gauge-high"></i>
-                    Dashboard
+                    <i class="fa-solid fa-network-wired"></i>
+                    Topología Activa
                 </a>
             </div>
 
@@ -151,9 +151,9 @@
                     <i class="fa-solid fa-search"></i>
                     Consulta Personalizada
                 </a>
-                <a href="{% url 'topologia' %}" class="sidebar-link {% if request.resolver_match.url_name == 'topologia' %}active{% endif %}">
-                    <i class="fa-solid fa-sitemap"></i>
-                    Topología
+                <a href="{% url 'dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    Historial de Red
                 </a>
                 <a href="{% url 'alertas' %}" class="sidebar-link {% if request.resolver_match.url_name == 'alertas' %}active{% endif %}">
                     <i class="fa-solid fa-triangle-exclamation"></i>
