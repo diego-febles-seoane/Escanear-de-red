@@ -24,4 +24,5 @@ urlpatterns = [
     path('topologia-datos/', views.topologia_datos, name='topologia_datos'),
     path('alertas/', views.alerts_page, name='alertas'),
     path('get-stats/', views.get_stats, name='get_stats'),
+    path('actualizar-nombre/', views.actualizar_nombre_dispositivo, name='actualizar_nombre_dispositivo'),
 ]

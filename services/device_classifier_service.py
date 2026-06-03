@@ -55,7 +55,7 @@ class device_classifier_service:
         
         # ---- FABRICANTES RED ----
         if any(
-            marca in fabricante for marca in ["cisco", "tp-link", "ubiquiti", "mikrotik", "netgear", "aruba"]
+            marca in fabricante for marca in ["cisco", "tp-link", "ubiquiti", "mikrotik", "netgear", "aruba", "wnc", "huawei enterprise", "wistron", "wistron neweb"]
         ):
             return "Dispositivo red"
         
@@ -80,7 +80,6 @@ class device_classifier_service:
         # ---- SERVICIOS MULTICAST / RED ----
         if "mcast.net" in host_name or "224.0.0" in host_name:
             return "Servicio de Red / Multicast"
-        
         # ---- CUALQUIER FABRICANTE ----
         if fabricante:
             return (

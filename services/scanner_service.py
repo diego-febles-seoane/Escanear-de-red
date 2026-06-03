@@ -8,6 +8,7 @@ from repositories.logs_repository import logs_repository
 from services.alertas_service import alertas_service
 from services.risk_service import risk_service
 from services.comparador_service import comparador_service
+from repositories.nombres_repository import nombres_repository
 
 """
 Servicio de escaneo de red para obtener información de los dispositivos
@@ -27,6 +28,7 @@ class scanner_service:
         self.alertas = alertas_service()
         self.risk = risk_service()
         self.comparador = comparador_service()
+        self.nombres_repo = nombres_repository()
 
     """
     Obtiene la ubicación de un dispositivo en base a su fabricante, tipo y IP
@@ -131,23 +133,24 @@ class scanner_service:
                 )
             )
             # ---- NOMBRE DISPOSITIVO ----
-            host = dispositivo.get("host_name")
-            if host and host!= "Desconocido":
-                nombre_dispositivo = host
-            elif fabricante and tipo:
-                nombre_dispositivo = (
-                    f"{fabricante} - {tipo}"
-                )
-            else:
-                nombre_dispositivo = (
-                    "Dispositivo desconocido"
-                )
-            # ---- VECES VISTO ----
             mac = dispositivo.get("mac")
-            veces_visto = (
-                self.repo.contar_por_mac(mac)
-                + 1
-            )
+
+            veces_visto = self.repo.contar_por_mac(mac) + 1
+            
+            nombre_personalizado_doc = self.nombres_repo.buscar_por_mac(mac)
+            nombre_personalizado = None
+            if nombre_personalizado_doc:
+                nombre_personalizado = nombre_personalizado_doc.get("nombre")
+            host = dispositivo.get("host_name")
+            if nombre_personalizado:
+                nombre_dispositivo = nombre_personalizado
+            elif host and host != "Desconocido":
+                nombre_dispositivo = host
+
+            elif fabricante and tipo:
+                nombre_dispositivo = f"{fabricante} - {tipo}"
+            else:
+                nombre_dispositivo = "Dispositivo desconocido"
             # ---- COMPROBAR DISPOSITIVO NUEVO ----
             if veces_visto == 1:
                 self.logs_repo.log_dispositivo_nuevo(
@@ -157,12 +160,11 @@ class scanner_service:
                 self.alertas.comprobar_dispositivo_nuevo(
                     dispositivo
                 )
-            # ---- PRIMER Y ULTIMO REGISTRO ----
+            # ---- PRIMER Y ÚLTIMO REGISTRO ----
             fecha_actual = dispositivo.get("fecha")
 
-            primer_registro = (
-                self.repo.buscar_primer_registro_por_mac(mac)
-            )
+            primer_registro = self.repo.buscar_primer_registro_por_mac(mac)
+            ultimo_registro = self.repo.buscar_ultimo_registro_por_mac(mac)
 
             if primer_registro:
                 primera_vez = (
@@ -172,16 +174,18 @@ class scanner_service:
                 )
             else:
                 primera_vez = fecha_actual
+
             ultima_vez = fecha_actual
-            
-            # ---- COMPARAR CON ANTIMO REGISTRO ----
+
+            # ---- COMPARAR CON ÚLTIMO REGISTRO ANTERIOR ----
             actual_para_comparar = {
                 "mac": mac,
                 "ip": dispositivo.get("ip"),
                 "riesgo": riesgo
             }
+
             self.comparador.comparar_con_anterior(
-                primer_registro,
+                ultimo_registro,
                 actual_para_comparar
             )
 

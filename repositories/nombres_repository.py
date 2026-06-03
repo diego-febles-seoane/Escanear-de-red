@@ -56,12 +56,12 @@ class nombres_repository:
     """
     def actualizar_nombre(self, mac, nombre_nuevo):
         mac = self.normalizar_mac(mac)
-        resulstado = self.collection.update_one(
+        resultado = self.collection.update_one(
             {"mac": mac},
             {"$set": {"nombre": nombre_nuevo}},
             upsert=True
         )
-        if resulstado.modified_count or resulstado.upserted_id:
+        if resultado.modified_count or resultado.upserted_id or resultado.matched_count:
             return "Nombre actualizado exitosamente"
 
         return "ERROR: El nombre no actualizado"

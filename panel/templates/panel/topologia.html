@@ -37,13 +37,11 @@
         <h3 class="text-lg font-semibold mb-3 text-cyan-400 text-center">
             Resumen de Activos
         </h3>
-
         <div class="text-center mb-4">
             <p class="text-4xl font-bold text-white" id="totalDevices" style="color: var(--text-main) !important;">0</p>
             <p class="text-gray-400 text-sm">Dispositivos detectados</p>
         </div>
-
-        <div class="grid grid-cols-3 gap-2 text-center">
+        <div class="grid grid-cols-3 gap-2 text-center mb-2">
             <div class="rounded-xl bg-white/5 p-2 border border-white/10">
                 <p class="text-lg font-bold text-cyan-400" id="totalCategorias">0</p>
                 <p class="text-[10px] text-gray-400">Categorías</p>
@@ -57,6 +55,18 @@
             <div class="rounded-xl bg-white/5 p-2 border border-white/10">
                 <p class="text-lg font-bold text-red-400" id="totalRiesgoAlto">0</p>
                 <p class="text-[10px] text-gray-400">Alto riesgo</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-center">
+            <div class="rounded-xl bg-white/5 p-2 border border-white/10">
+                <p class="text-lg font-bold text-green-400" id="totalNuevos">0</p>
+                <p class="text-[10px] text-gray-400">Nuevos</p>
+            </div>
+
+            <div class="rounded-xl bg-white/5 p-2 border border-white/10">
+                <p class="text-xs font-bold text-gray-300" id="ultimoEscaneo">-</p>
+                <p class="text-[10px] text-gray-400">Último escaneo</p>
             </div>
         </div>
     </div>
@@ -97,6 +107,8 @@
             <div id="network" class="absolute inset-0 bg-transparent z-10 transition-opacity duration-500 overflow-y-auto scrollbar-hide">
                 <div id="networkGrid" class="network-grid-layout"></div>
             </div>
+            <div class="map-scroll-blur map-scroll-blur-top"></div>
+            <div class="map-scroll-blur map-scroll-blur-bottom"></div>
 
             <!-- Panel de Detalles Lateral -->
             <div id="nodeDetailPanel" class="absolute top-24 right-6 w-72 glass-card border border-white/10 p-5 z-40 transform translate-x-80 transition-transform duration-500 shadow-2xl" style="background: var(--bg-card-solid);">
@@ -158,6 +170,7 @@
             <div id="liquid-fill-container" class="absolute inset-0 z-20 pointer-events-none opacity-0 transition-opacity duration-500 hidden">
 
                 <div id="liquid-layer-1" class="liquid-layer liquid-blue" style="height:0%;">
+                    <div class="shark-fin shark-fin-back"></div>
                     <div class="wave-track wave-track-1">
                         <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
                             <path d="M0,70 C240,20 480,20 720,70 C960,120 1200,120 1440,70 C1680,20 1920,20 2160,70 C2400,120 2640,120 2880,70 L2880,120 L0,120 Z"></path>
@@ -166,6 +179,7 @@
                 </div>
 
                 <div id="liquid-layer-2" class="liquid-layer liquid-cyan" style="height:0%; transition-delay:100ms;">
+                    <div class="shark-fin shark-fin-mid"></div>
                     <div class="wave-track wave-track-2">
                         <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
                             <path d="M0,70 C240,40 480,40 720,70 C960,100 1200,100 1440,70 C1680,40 1920,40 2160,70 C2400,100 2640,100 2880,70 L2880,120 L0,120 Z"></path>
@@ -174,6 +188,7 @@
                 </div>
 
                 <div id="liquid-layer-3" class="liquid-layer liquid-front" style="height:0%; transition-delay:200ms;">
+                    <div class="shark-fin shark-fin-front"></div>
                     <div class="wave-track wave-track-3">
                         <svg class="wave-svg" viewBox="0 0 2880 120" preserveAspectRatio="none">
                             <path d="M0,75 C240,55 480,55 720,75 C960,95 1200,95 1440,75 C1680,55 1920,55 2160,75 C2400,95 2640,95 2880,75 L2880,120 L0,120 Z"></path>
@@ -223,6 +238,37 @@
             </h3>
 
             <div id="legendContainer" class="space-y-3"></div>
+            <!-- NUEVO BLOQUE -->
+            <div class="mt-5 pt-4 border-t border-white/10">
+                <div class="text-xs font-semibold text-cyan-400 mb-2">
+                    Nivel de confianza
+                </div>
+
+                <div class="text-[11px] space-y-2 text-gray-400">
+
+                    <div class="flex items-center justify-between">
+                        <span class="confidence-badge confidence-known">
+                            Conocido
+                        </span>
+                        <span>> 5 detecciones</span>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="confidence-badge confidence-observed">
+                            Observado
+                        </span>
+                        <span>2 - 5 detecciones</span>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="confidence-badge confidence-new">
+                            Nuevo
+                        </span>
+                        <span>Primera detección</span>
+                    </div>
+
+                </div>
+            </div>
         </div>
     </div>
 
@@ -251,12 +297,102 @@
     }
 
     .network-grid-layout {
-        padding: 125px 24px 28px 24px;
+        padding: 135px 24px 36px 24px;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 18px;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: 22px;
         align-items: start;
         min-height: 100%;
+    }
+
+    .map-scroll-blur {
+        position: absolute;
+        left: 0;
+        width: 100%;
+        height: 55px;
+        z-index: 18;
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    .map-scroll-blur::before {
+        content: "";
+        position: absolute;
+        inset: -12px 0;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+
+    .map-scroll-blur-top {
+        top: -1px;
+    }
+
+    .map-scroll-blur-top::before {
+        background: linear-gradient(
+            to bottom,
+            var(--bg-card-solid) 0%,
+            rgba(10,15,24,0.45) 55%,
+            transparent 100%
+        );
+
+        mask-image: linear-gradient(
+            to bottom,
+            black 0%,
+            black 40%,
+            transparent 100%
+        );
+
+        -webkit-mask-image: linear-gradient(
+            to bottom,
+            black 0%,
+            black 40%,
+            transparent 100%
+        );
+    }
+
+    .map-scroll-blur-bottom {
+        bottom: -1px;
+    }
+
+    .map-scroll-blur-bottom::before {
+        background: linear-gradient(
+            to top,
+            var(--bg-card-solid) 0%,
+            rgba(10,15,24,0.45) 55%,
+            transparent 100%
+        );
+
+        mask-image: linear-gradient(
+            to top,
+            black 0%,
+            black 40%,
+            transparent 100%
+        );
+
+        -webkit-mask-image: linear-gradient(
+            to top,
+            black 0%,
+            black 40%,
+            transparent 100%
+        );
+    }
+
+    [data-theme="light"] .map-scroll-blur-top::before {
+        background: linear-gradient(
+            to bottom,
+            rgba(255,255,255,0.95) 0%,
+            rgba(255,255,255,0.45) 55%,
+            transparent 100%
+        );
+    }
+
+    [data-theme="light"] .map-scroll-blur-bottom::before {
+        background: linear-gradient(
+            to top,
+            rgba(255,255,255,0.95) 0%,
+            rgba(255,255,255,0.45) 55%,
+            transparent 100%
+        );
     }
 
     .topology-group-card {
@@ -344,16 +480,16 @@
         position: relative;
         z-index: 1;
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
-        gap: 8px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
     }
 
     .topology-device-tile {
         border: 1px solid rgba(255,255,255,0.18);
         background: rgba(0,0,0,0.22);
         border-radius: 16px;
-        padding: 8px;
-        min-height: 70px;
+        padding: 10px;
+        min-height: 96px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -367,6 +503,105 @@
         background: rgba(255,255,255,0.16);
         border-color: rgba(255,255,255,0.35);
         box-shadow: 0 10px 22px rgba(0,0,0,0.25);
+    }
+    .shark-fin {
+        position: absolute;
+        left: 0;
+        top: -48px;
+        width: 78px;
+        height: 58px;
+        pointer-events: none;
+        opacity: 0;
+        z-index: 1;
+        filter: drop-shadow(0 10px 14px rgba(0,0,0,0.35));
+    }
+
+    .shark-fin {
+        position: absolute;
+        left: 0;
+        top: -76px;
+        width: 118px;
+        height: 88px;
+        pointer-events: none;
+        opacity: 0;
+        z-index: 2;
+        filter: drop-shadow(0 14px 18px rgba(0,0,0,0.40));
+    }
+
+    .shark-fin-back {
+        top: -72px;
+        animation: sharkBackSwim 30s linear infinite;
+        transform-origin: center bottom;
+    }
+
+    .shark-fin-mid {
+        top: -70px;
+        animation: sharkMidSwim 30s linear infinite;
+        transform-origin: center bottom;
+    }
+
+    .shark-fin-front {
+        top: -68px;
+        animation: sharkFrontSwim 30s linear infinite;
+        transform-origin: center bottom;
+    }
+
+    @keyframes sharkBackSwim {
+        0% {
+            opacity: 0;
+            transform: translateX(-160px) scale(0.78);
+        }
+        6% {
+            opacity: 0.55;
+        }
+        30% {
+            opacity: 0.55;
+            transform: translateX(calc(100vw + 160px)) scale(0.78);
+        }
+        36%,
+        100% {
+            opacity: 0;
+            transform: translateX(calc(100vw + 160px)) scale(0.78);
+        }
+    }
+
+    @keyframes sharkMidSwim {
+        0%,
+        36% {
+            opacity: 0;
+            transform: translateX(calc(100vw + 160px)) scaleX(-1) scale(0.98);
+        }
+        42% {
+            opacity: 0.72;
+        }
+        66% {
+            opacity: 0.72;
+            transform: translateX(-160px) scaleX(-1) scale(0.98);
+        }
+        72%,
+        100% {
+            opacity: 0;
+            transform: translateX(-160px) scaleX(-1) scale(0.98);
+        }
+    }
+
+    @keyframes sharkFrontSwim {
+        0%,
+        72% {
+            opacity: 0;
+            transform: translateX(-160px) scale(1.18);
+        }
+        78% {
+            opacity: 0.9;
+        }
+        96% {
+            opacity: 0.9;
+            transform: translateX(calc(100vw + 160px)) scale(1.18);
+        }
+        100% {
+            opacity: 0;
+            transform: translateX(calc(100vw + 160px)) scale(1.18);
+        }
     }
 
     .topology-device-icon {
@@ -385,7 +620,7 @@
     .topology-device-name {
         color: #fff;
         font-size: 10px;
-        font-weight: 700;
+        font-weight: 800;
         line-height: 1.15;
         overflow: hidden;
         display: -webkit-box;
@@ -396,7 +631,7 @@
     .topology-device-ip {
         color: rgba(255,255,255,0.72);
         font-size: 9px;
-        margin-top: 5px;
+        margin-top: 4px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -503,6 +738,7 @@
         left: 0;
         width: 200%;
         height: 90px;
+        z-index: 5;
     }
 
     .wave-svg {
@@ -619,6 +855,41 @@
 
     .topology-device-tile {
         animation: tileFadeIn 420ms ease both;
+    }
+    .confidence-badge {
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 8px;
+        font-weight: 800;
+    }
+
+    .confidence-new {
+        background: rgba(239,68,68,.18);
+        color: #ff6b6b;
+    }
+
+    .confidence-observed {
+        background: rgba(245,158,11,.18);
+        color: #fbbf24;
+    }
+
+    .confidence-known {
+        background: rgba(34,197,94,.18);
+        color: #4ade80;
+    }
+
+    .device-status-row {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 6px;
+    }
+    .confidence-badge {
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 7px;
+        font-weight: 900;
+        white-space: nowrap;
     }
 
     @keyframes groupFadeIn {
@@ -770,6 +1041,7 @@ function normalizarGrupo(tipo) {
     if (t.includes("fortinet")) return "Fortinet";
     if (t.includes("multicast") || t.includes("red")) return "Red / Multicast";
     if (t.includes("router") || t.includes("gateway")) return "Routers";
+    if (t.includes("dispositivo red") || t.includes("infraestructura") || t.includes("switch") || t.includes("gateway")) return "Infraestructura de Red";
     if (t.includes("desconocido")) return "Desconocidos";
 
     return tipo || "Otros";
@@ -975,6 +1247,9 @@ function showDeviceTooltip(event, device) {
     const riesgo = escapeHTML(device.riesgo || 'BAJO');
     const primeraVez = formatPanelDate(device.primera_vez || device.primera_vez_conectado || device.fecha);
     const ultimaVez = formatPanelDate(device.ultima_vez || device.ultima_vez_conectado || device.fecha);
+    const vistoHace = timeAgo(device.ultima_vez || device.fecha);
+    const confianza = obtenerNivelConfianza(device);
+    const confianzaPct = calcularConfianza(device);
 
     tooltip.innerHTML = `
         <div class="device-tooltip-title">${nombre}</div>
@@ -983,7 +1258,15 @@ function showDeviceTooltip(event, device) {
             <span class="device-tooltip-label">IP</span>
             <span class="device-tooltip-value">${ip}</span>
         </div>
+        <div class="device-status-row">
+            <span class="device-seen-ago">
+                ${vistoHace}
+            </span>
 
+            <span class="confidence-badge ${confianza.clase}">
+                ${confianza.texto}
+            </span>
+        </div>
         <div class="device-tooltip-row">
             <span class="device-tooltip-label">MAC</span>
             <span class="device-tooltip-value">${mac}</span>
@@ -1007,6 +1290,22 @@ function showDeviceTooltip(event, device) {
         <div class="device-tooltip-row">
             <span class="device-tooltip-label">Última vez</span>
             <span class="device-tooltip-value">${ultimaVez}</span>
+        </div>
+
+        <div style="margin-top:12px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:11px;">
+                <span class="device-tooltip-label">Confianza</span>
+                <span class="device-tooltip-value">${confianzaPct}% · ${confianza.texto}</span>
+            </div>
+
+            <div style="height:7px; border-radius:999px; overflow:hidden; background:rgba(255,255,255,.08);">
+                <div style="
+                    width:${confianzaPct}%;
+                    height:100%;
+                    border-radius:999px;
+                    background:linear-gradient(to right, #22c55e, #06b6d4);
+                "></div>
+            </div>
         </div>
 
         <div class="device-tooltip-risk-box ${getRiskBoxClass(riesgo)}">
@@ -1049,6 +1348,37 @@ function hideDeviceTooltip() {
     tooltip.classList.add('hidden');
     tooltip.style.display = 'none';
 }
+function obtenerNivelConfianza(device) {
+        const veces = Number(device.veces_visto || 0);
+
+        if (veces <= 1) {
+            return {
+                texto: 'Nuevo',
+                clase: 'confidence-new'
+            };
+        }
+
+        if (veces <= 5) {
+            return {
+                texto: 'Observado',
+                clase: 'confidence-observed'
+            };
+        }
+
+        return {
+            texto: 'Conocido',
+            clase: 'confidence-known'
+        };
+    }
+
+    function calcularConfianza(device) {
+        const veces = Number(device.veces_visto || 0);
+
+        return Math.min(
+            100,
+            Math.round((veces / 10) * 100)
+        );
+    }
 function renderizarTopologiaGrid(data) {
     const grid = document.getElementById('networkGrid');
 
@@ -1078,6 +1408,10 @@ function renderizarTopologiaGrid(data) {
             const mac = device.mac || '';
             const encoded = encodeURIComponent(JSON.stringify(device));
             const riesgoClase = (device.riesgo || 'BAJO').toLowerCase();
+
+            const vistoHace = timeAgo(device.ultima_vez || device.fecha);
+            const confianza = obtenerNivelConfianza(device);
+
             return `
                 <button
                     type="button"
@@ -1089,6 +1423,13 @@ function renderizarTopologiaGrid(data) {
                     <span class="topology-device-icon">${getIconForType(device.tipo_dispositivo || device.tipo || grupo)}</span>
                     <span class="topology-device-name">${escapeHTML(deviceName)}</span>
                     <span class="topology-device-ip">${escapeHTML(ip)}</span>
+
+                    <div class="device-status-row">
+                        <span class="confidence-badge ${confianza.clase}">
+                            ${confianza.texto}
+                        </span>
+                    </div>
+
                     <div class="risk-bottom-bar ${riesgoClase}"></div>
                 </button>
             `;
@@ -1265,9 +1606,17 @@ function updateTopoProgress() {
                 const p = data.percentage || 0;
 
                 requestAnimationFrame(() => {
-                    liquidLayer1.style.height = `${Math.min(100, p + 16)}%`;
-                    liquidLayer2.style.height = `${Math.min(100, p + 8)}%`;
-                    liquidLayer3.style.height = `${p}%`;
+                    const back = Math.min(100, p + 16);
+                    const mid = Math.min(100, p + 8);
+                    const front = p;
+
+                    liquidLayer1.style.height = `${back}%`;
+                    liquidLayer2.style.height = `${mid}%`;
+                    liquidLayer3.style.height = `${front}%`;
+
+                    liquidContainer.style.setProperty('--wave-back-height', `${back}%`);
+                    liquidContainer.style.setProperty('--wave-mid-height', `${mid}%`);
+                    liquidContainer.style.setProperty('--wave-front-height', `${front}%`);
                 });
                 
                 topoStatus.innerText = data.message || 'Analizando red...';
@@ -1281,9 +1630,9 @@ function updateTopoProgress() {
                     setTopoBtnState(false);
                     topoProgressInfo.classList.add('hidden');
 
-                    liquidLayer1.style.height = '0%';
-                    liquidLayer2.style.height = '0%';
-                    liquidLayer3.style.height = '0%';
+                    liquidContainer.style.setProperty('--wave-back-height', '0%');
+                    liquidContainer.style.setProperty('--wave-mid-height', '0%');
+                    liquidContainer.style.setProperty('--wave-front-height', '0%');
 
                     fetch('{% url "get_activos" %}')
                         .then(r => r.json())
@@ -1355,16 +1704,36 @@ function initSearch() {
 
 window.addEventListener('themeChanged', () => {
 });
+function timeAgo(value) {
+    if (!value) return '-';
+
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return '-';
+
+    const diffSeconds = Math.floor((new Date() - date) / 1000);
+
+    if (diffSeconds < 60) return 'Ahora';
+    if (diffSeconds < 3600) return `Hace ${Math.floor(diffSeconds / 60)} min`;
+    if (diffSeconds < 86400) return `Hace ${Math.floor(diffSeconds / 3600)} h`;
+
+    return `Hace ${Math.floor(diffSeconds / 86400)} d`;
+}
+
 function actualizarResumenRapido(data) {
     const totalCategorias = document.getElementById('totalCategorias');
     const totalFabricantes = document.getElementById('totalFabricantes');
     const totalRiesgoAlto = document.getElementById('totalRiesgoAlto');
+    const totalNuevos = document.getElementById('totalNuevos');
+    const ultimoEscaneo = document.getElementById('ultimoEscaneo');
 
     if (!totalCategorias || !totalFabricantes || !totalRiesgoAlto) return;
 
     const categorias = new Set();
     const fabricantes = new Set();
+
     let riesgoAlto = 0;
+    let nuevos = 0;
+    let fechaMasReciente = null;
 
     data.forEach(device => {
         const tipo = device.tipo_dispositivo || device.tipo || 'Desconocido';
@@ -1375,11 +1744,25 @@ function actualizarResumenRapido(data) {
         if ((device.riesgo || '').toUpperCase() === 'ALTO') {
             riesgoAlto++;
         }
+
+        if (Number(device.veces_visto || 0) <= 1) {
+            nuevos++;
+        }
+
+        const fecha = new Date(device.ultima_vez || device.fecha);
+        if (!isNaN(fecha.getTime())) {
+            if (!fechaMasReciente || fecha > fechaMasReciente) {
+                fechaMasReciente = fecha;
+            }
+        }
     });
 
     totalCategorias.innerText = categorias.size;
     totalFabricantes.innerText = fabricantes.size;
     totalRiesgoAlto.innerText = riesgoAlto;
+
+    if (totalNuevos) totalNuevos.innerText = nuevos;
+    if (ultimoEscaneo) ultimoEscaneo.innerText = fechaMasReciente ? timeAgo(fechaMasReciente) : '-';
 }
 </script>
 {% endblock %}

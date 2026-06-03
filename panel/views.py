@@ -831,3 +831,79 @@ def topologia_datos(request):
     except Exception as e:
         print(f"Error en topologia_datos: {e}")
         return JsonResponse({"error": str(e)}, status=500)
+
+@mongo_login_required
+@csrf_exempt
+@require_POST
+def actualizar_nombre_dispositivo(request):
+    set_mongo_session_data(
+        request.session.get('mongo_user'),
+        request.session.get('mongo_password'),
+        request.session.get('mongo_host')
+    )
+
+    try:
+        import json
+        from repositories.nombres_repository import nombres_repository
+
+        body = json.loads(request.body)
+
+        mac = body.get("mac")
+        nombre = body.get("nombre")
+
+        if not mac or not nombre:
+            return JsonResponse(
+                {"ok": False, "error": "MAC y nombre son obligatorios"},
+                status=400
+            )
+
+        repo = nombres_repository()
+        resultado = repo.actualizar_nombre(mac, nombre)
+        from repositories.historial_repository import historial_repository
+        from repositories.activos_repository import activos_repository
+
+        historial_repo = historial_repository()
+        activos_repo = activos_repository()
+
+        mac_normalizada = mac.lower().replace(":", "-")
+
+        historial_repo.collection.update_many(
+            {
+                "$or": [
+                    {"mac": mac},
+                    {"mac": mac_normalizada}
+                ]
+            },
+            {
+                "$set": {
+                    "nombre_dispositivo": nombre
+                }
+            }
+        )
+
+        activos_repo.collection.update_many(
+            {
+                "$or": [
+                    {"mac": mac},
+                    {"mac": mac_normalizada}
+                ]
+            },
+            {
+                "$set": {
+                    "nombre_dispositivo": nombre
+                }
+            }
+        )
+        ok = not resultado.startswith("ERROR")
+        return JsonResponse({
+            "ok": ok,
+            "message": resultado,
+            "mac": mac,
+            "nombre": nombre
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            "ok": False,
+            "error": str(e)
+        }, status=500)

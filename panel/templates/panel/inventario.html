@@ -19,6 +19,7 @@
                 <tr>
                     <th class="p-5 text-left">MAC</th>
                     <th class="p-5 text-left">Nombre del Dispositivo</th>
+                    <th class="p-5 text-right">Acciones</th>
                 </tr>
             </thead>
             <tbody id="inventario-tbody">
@@ -53,15 +54,35 @@
         const paginatedItems = allDevices.slice(start, end);
 
         if (paginatedItems.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="2" class="p-10 text-center text-gray-500">No hay dispositivos registrados en el inventario.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="3" class="p-10 text-center text-gray-500">No hay dispositivos registrados en el inventario.</td></tr>';
             return;
         }
 
-        paginatedItems.forEach(item => {
+        paginatedItems.forEach((item, index) => {
+            const rowId = `${currentPage}-${index}`;
+            const nombreActual = item.nombre_dispositivo || '';
             tableBody.innerHTML += `
-                <tr class="table-row border-b border-white/5 hover:bg-white/5 transition-all duration-300 hover:translate-x-1">
-                    <td class="p-5 font-medium font-mono text-cyan-400">${item.mac}</td>
-                    <td class="p-5">${item.nombre_dispositivo || '-'}</td>
+                <tr class="table-row border-b border-white/5 hover:bg-white/5 transition-all duration-300">
+                    <td class="p-5 font-medium font-mono text-cyan-400">
+                        ${item.mac}
+                    </td>
+                    <td class="p-5">
+                        <input
+                            id="nombre-${rowId}"
+                            type="text"
+                            value="${nombreActual}"
+                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-cyan-400"
+                        >
+                    </td>
+                    <td class="p-5 text-right">
+                        <button
+                            onclick="guardarNombre('${item.mac}', 'nombre-${rowId}')"
+                            class="bg-gradient-to-r from-green-500 to-cyan-600 px-4 py-2 rounded-xl text-xs font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all"
+                        >
+                            <i class="fa-solid fa-floppy-disk mr-1"></i>
+                            Guardar
+                        </button>
+                    </td>
                 </tr>
             `;
         });
@@ -87,7 +108,45 @@
         nextBtn.onclick = () => { if(currentPage < totalPages) { currentPage++; displayInventory(); } };
         paginationControls.appendChild(nextBtn);
     }
+    function guardarNombre(mac, inputId) {
+        const input = document.getElementById(inputId);
+        const nombre = input.value.trim();
 
+        if (!nombre) {
+            alert("El nombre no puede estar vacío");
+            return;
+        }
+
+        fetch('{% url "actualizar_nombre_dispositivo" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                mac: mac,
+                nombre: nombre
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.ok) {
+                alert(data.error || "Error al actualizar el nombre");
+                return;
+            }
+
+            input.classList.remove('border-red-400');
+            input.classList.add('border-green-400');
+
+            setTimeout(() => {
+                input.classList.remove('border-green-400');
+            }, 1000);
+        })
+        .catch(error => {
+            console.error(error);
+            alert("Error al guardar el nombre");
+        });
+    }
     // Inicializar
     displayInventory();
 </script>
