@@ -91,6 +91,24 @@ def get_activos_repo():
         print(f"Error loading activos repository: {e}")
         return None
 
+def limpiar_para_json(obj):
+    if isinstance(obj, list):
+        return [limpiar_para_json(item) for item in obj]
+
+    if isinstance(obj, dict):
+        return {
+            key: limpiar_para_json(value)
+            for key, value in obj.items()
+        }
+
+    if hasattr(obj, "__str__") and obj.__class__.__name__ == "ObjectId":
+        return str(obj)
+
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+
+    return obj
+
 def get_logs_repo():
     try:
         from repositories.logs_repository import logs_repository
@@ -330,18 +348,11 @@ def get_dashboard(request):
         request.session.get('mongo_password'),
         request.session.get('mongo_host')
     )
-    
-    repo = get_activos_repo()
 
-    if repo:
-        try:
-            data = repo.obtener_dashboard()
-            return JsonResponse(data, safe=False)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    
-    return JsonResponse({'error': 'No se pudo obtener el dashboard'}, status=500)
+    return render(
+        request,
+        'panel/escaner.html'
+    )
 
 @mongo_login_required
 def get_logs(request):
@@ -601,12 +612,8 @@ def export_pdf(request):
         request.session.get('mongo_host')
     )
     
-    repo = get_historial_repo()
-    if not repo:
-        return HttpResponse("Error: No se pudo conectar a la base de datos", status=500)
-    
     try:
-        dispositivos = repo.listar_todos_limpio()
+        dispositivos, nombre_base = obtener_datos_exportacion(request)
         
         # Calcular algunas estadísticas para el resumen
         total = len(dispositivos)
@@ -628,7 +635,7 @@ def export_pdf(request):
         
         if not pdf.err:
             response = HttpResponse(result.getvalue(), content_type='application/pdf')
-            filename = f"Informe_Red_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            filename = f"{nombre_base}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             return response
             
@@ -676,13 +683,11 @@ def export_csv(request):
     
     import csv
     
-    repo = get_historial_repo()
-    if not repo:
-        return JsonResponse({'error': 'No se pudo conectar al repositorio'}, status=500)
-    
-    datos = repo.listar_todos_limpio()
-    
-    filename = f"historial_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    datos, nombre_base = obtener_datos_exportacion(request)
+    if not datos:
+        return JsonResponse({'error': 'No hay datos para exportar'}, status=500)
+
+    filename = f"{nombre_base}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     
     response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
@@ -709,13 +714,11 @@ def export_json(request):
     
     import json
     
-    repo = get_historial_repo()
-    if not repo:
-        return JsonResponse({'error': 'No se pudo conectar al repositorio'}, status=500)
-    
-    datos = repo.listar_todos_limpio()
-    
-    filename = f"historial_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    datos, nombre_base = obtener_datos_exportacion(request)
+    if not datos:
+        return JsonResponse({'error': 'No hay datos para exportar'}, status=500)
+
+    filename = f"{nombre_base}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
     
     response = HttpResponse(content_type='application/json')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
@@ -735,17 +738,16 @@ def export_excel(request):
     
     import tempfile
     
-    repo = get_historial_repo()
-    if not repo:
-        return JsonResponse({'error': 'No se pudo conectar al repositorio'}, status=500)
-    
-    datos = repo.listar_todos_limpio()
+    datos, nombre_base = obtener_datos_exportacion(request)
+
+    if not datos:
+        return JsonResponse({'error': 'No hay datos para exportar'}, status=500)
     
     export_svc = get_export_service()
     if not export_svc:
         return JsonResponse({'error': 'No se pudo inicializar el servicio de exportación'}, status=500)
     
-    filename = f"historial_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    filename = f"{nombre_base}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     
     with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
         tmp_path = tmp.name
@@ -907,3 +909,24 @@ def actualizar_nombre_dispositivo(request):
             "ok": False,
             "error": str(e)
         }, status=500)
+
+def obtener_datos_exportacion(request):
+    scope = request.GET.get("scope", "historial")
+
+    if scope == "activos":
+        repo = get_activos_repo()
+        nombre_base = "activos_ultimo_escaneo"
+    else:
+        repo = get_historial_repo()
+        nombre_base = "historial_red"
+
+    if not repo:
+        return [], nombre_base
+
+    if hasattr(repo, "listar_todos_limpio"):
+        datos = repo.listar_todos_limpio()
+    else:
+        datos = list(repo.collection.find())
+        datos = limpiar_para_json(datos)
+
+    return datos, nombre_base
