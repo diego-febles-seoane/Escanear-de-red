@@ -8,13 +8,16 @@
         transition: all 0.2s;
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .campo-bubble:hover {
-        background: rgba(255, 255, 255, 0.1);
+    .campo-bubble.active:hover {
+        background: #10b981 !important;
+        color: white !important;
     }
     .campo-bubble.active {
-        background: #10b981; /* green-500 */
-        border-color: #10b981;
-        color: white;
+        background: #10b981 !important;
+        border-color: #10b981 !important;
+        color: white !important;
+        font-weight: 700;
+        box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
     }
     /* Estilos para corregir el contraste de los select */
     select option {
@@ -254,8 +257,6 @@
                     
                     bubble.addEventListener("click", () => {
                         bubble.classList.toggle("active");
-                        bubble.classList.toggle("bg-cyan-500/20");
-                        bubble.classList.toggle("text-cyan-400");
                         bubble.classList.toggle("border-cyan-500/30");
                     });
 
