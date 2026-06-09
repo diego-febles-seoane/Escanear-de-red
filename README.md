@@ -100,13 +100,11 @@ Pantalla principal del sistema. Muestra únicamente los dispositivos detectados 
 - Nivel de confianza
 - Topología agrupada por categorías
 
-![Topología Activa](documentacion/imgs/topologia_terminada.png)
 
 **Tooltip:**
 - Muestra información detallada sobre cada dispositivo.
 - Permite identificar fácilmente los dispositivos activos, inactivos, con riesgo y sin riesgo.
 
-![Tooltip](documentacion/imgs/tooltip_topologia.png)
 
 ---
 
@@ -130,7 +128,6 @@ Incluye:
 - Fechas de detección
 - Historial de actividad
 
-![Historial](documentacion/imgs/historial_red.png)
 
 ---
 
@@ -138,11 +135,9 @@ Incluye:
 
 Permite gestionar nombres personalizados asociados a cada dirección MAC.
 
-![Cambio nombre](documentacion/imgs/cambiar_nombre_inventario.png)
 
 Los nombres definidos por el usuario se reflejan automáticamente en la Topología Activa y en el Historial de Red.
 
-![Inventario](documentacion/imgs/inventario_nombres_dispositivos.png)
 
 ---
 
@@ -160,17 +155,11 @@ Constructor dinámico de consultas.
 
 ![Consulta](documentacion/imgs/query_personalizada.png)
 
-**Resultado:**
-
-![Resultado consulta](documentacion/imgs/ejemplo_resultado_ejecutar_query_personalizada.png)
-
 ---
 
 ## Exportaciones
 
 Permite exportar datos en distintos formatos.
-
-![Exportadores](documentacion/imgs/exportadores.png)
 
 **Permite:**
 
@@ -190,8 +179,6 @@ Ejemplos:
 - Cambios de IP
 - Fabricantes desconocidos
 - Eventos relevantes de seguridad
-
-![Alertas](documentacion/imgs/alertas.png)
 
 ---
 

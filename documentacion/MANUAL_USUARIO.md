@@ -233,8 +233,6 @@ La aplicación valida la conexión antes de permitir el acceso.
 
 La Topología Activa es la pantalla principal del sistema.
 
-![Topología Activa](imgs/topologia_terminada.png)
-
 Muestra únicamente los dispositivos detectados en el último escaneo.
 
 **Incluye:**
@@ -254,8 +252,6 @@ Muestra únicamente los dispositivos detectados en el último escaneo.
 - Exportaciones del último escaneo.
 
 Los dispositivos se agrupan automáticamente por tipo. Cada tarjeta muestra nombre, IP, confianza y nivel de riesgo.
-
-![Tooltip](imgs/tooltip_topologia.png)
 
 ---
 
@@ -285,8 +281,6 @@ El Historial de Red muestra todos los registros acumulados.
 
 **Incluye:**
 
-![Historial](imgs/historial_red.png)
-
 - Tabla paginada.
 - IP.
 - MAC.
@@ -307,11 +301,7 @@ A diferencia de Topología Activa, esta sección no muestra solo el último esca
 
 El Inventario permite consultar direcciones MAC y nombres de dispositivos.
 
-![Inventario](imgs/inventario_nombres_dispositivos.png)
-
 Sirve para identificar dispositivos y mantener nombres personalizados asociados a cada MAC.
-
-![Cambio nombre](imgs/cambiar_nombre_inventario.png)
 
 Si se modifica el nombre de un dispositivo, este cambio se refleja en:
 
@@ -339,15 +329,11 @@ El Constructor de Consultas permite realizar búsquedas avanzadas.
 
 Los campos seleccionados aparecen como burbujas activas con fondo verde, texto oscuro y efecto glow.
 
-![Resultado consulta](imgs/ejemplo_resultado_ejecutar_query_personalizada.png)
-
 ---
 
 ## 17. Alertas
 
 La sección de alertas muestra eventos relevantes detectados por el sistema.
-
-![Alertas](imgs/alertas.png)
 
 Ejemplos:
 
